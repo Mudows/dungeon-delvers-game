@@ -1,4 +1,5 @@
 import { Grid } from './grid.js';
+import { GameMap } from './map.js';
 
 async function OnBeforeProjectStart(runtime) {
   // Code to run just before 'On start of layout' on
@@ -14,6 +15,7 @@ function Tick(runtime) {
 
 runOnStartup(async (runtime) => {
   const grid = new Grid(16);
+	const map = new GameMap(16, 16);
 
   let player;
 
@@ -26,6 +28,8 @@ runOnStartup(async (runtime) => {
 
     player.x = pos.x;
     player.y = pos.y;
+
+		console.warn(map.grid)
   });
 
 	runtime.addEventListener('keydown', event => {

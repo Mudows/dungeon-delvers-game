@@ -56,6 +56,14 @@
 					"script-info": {
 						"purpose": "none"
 					}
+				},
+				{
+					"name": "map.js",
+					"type": "application/javascript",
+					"sid": 739914446834769,
+					"script-info": {
+						"purpose": "none"
+					}
 				}
 			],
 			"subfolders": []
