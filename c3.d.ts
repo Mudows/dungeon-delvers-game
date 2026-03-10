@@ -1,5 +1,5 @@
 // NOTE: This definition file is auto generated - any changes you make will not be saved
-// 3/5/2026 8:29:54 PM
+// 3/8/2026 7:58:02 PM
 
 declare function runOnStartup(cb: (runtime: IRuntime) => void): void;
 
@@ -42,6 +42,7 @@ declare var IRuntime:  { new(): IRuntime };
 type VariableType = Record<string, string | boolean | number | null | undefined>;
 
 interface IRuntimeObjects {
+	['simpleTileset']: IObjectClass<IsimpleTileset>;
 	['player']: IObjectClass<Iplayer>;
 }
 
@@ -167,6 +168,17 @@ interface IObjectClass<T = IInstance> {
     createInstance(layerNameOrIndex: string | number, x: number, y: number, createHierachy: boolean): T
 }
 declare var IObjectClass: { new(): IObjectClass };
+
+interface IsimpleTilesetVars extends VariableType {
+	
+}
+interface IsimpleTilesetBehaviors extends Record<string, IBehaviorInstance> {
+	
+}
+interface IsimpleTileset extends ITilemapInstance {
+	instVars: IsimpleTilesetVars;
+	behaviors: IsimpleTilesetBehaviors;
+}
 
 interface IplayerVars extends VariableType {
 	
