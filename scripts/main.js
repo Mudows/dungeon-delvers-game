@@ -2,20 +2,17 @@ import { Grid } from './grid.js';
 import { GameMap } from './map.js';
 
 async function OnBeforeProjectStart(runtime) {
-  // Code to run just before 'On start of layout' on
-  // the first layout. Loading has finished and initial
-  // instances are created and available to use here.
-
   runtime.addEventListener('tick', () => Tick(runtime));
 }
 
 function Tick(runtime) {
-  // Code to run every tick
+  // Lógica por tick (a ser expandida com sistema de turnos)
 }
 
 runOnStartup(async (runtime) => {
+  // MVP nível 1: mapa 32×32, até 6 salas
   const grid = new Grid(16);
-  const map = new GameMap(16, 16);
+  const map  = new GameMap(32, 32, 6);
 
   let player;
   let tileset;
@@ -23,17 +20,21 @@ runOnStartup(async (runtime) => {
   runtime.addEventListener('beforeprojectstart', () => {
     OnBeforeProjectStart(runtime);
 
-    player = runtime.objects.player.getFirstInstance();
+    player  = runtime.objects.player.getFirstInstance();
     tileset = runtime.objects.simpleTileset.getFirstInstance();
 
-    const pos = grid.toPixel(5, 5);
+    // Renderiza o mapa no tilemap
+    map.render(tileset);
 
+    // Posiciona o jogador no centro da primeira sala
+    const start = map.getPlayerStart();
+    const pos   = grid.toPixel(start.x, start.y);
     player.x = pos.x;
     player.y = pos.y;
 
-    map.render(tileset);
-
-    console.warn(map.grid);
+    // Debug: exibe salas e spawns de inimigos no console
+    console.log('Salas geradas:', map.rooms);
+    console.log('Spawns de inimigos:', map.getEnemySpawns());
   });
 
   runtime.addEventListener('keydown', (event) => {
