@@ -57,6 +57,14 @@
 				],
 				"subfolders": [],
 				"name": "Goblins"
+			},
+			{
+				"items": [
+					"HpBarBg",
+					"HpBarFill"
+				],
+				"subfolders": [],
+				"name": "UI"
 			}
 		]
 	},
@@ -108,6 +116,14 @@
 					"name": "turn.js",
 					"type": "application/javascript",
 					"sid": 263779406263444,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "combat.js",
+					"type": "application/javascript",
+					"sid": 512476082675550,
 					"script-info": {
 						"purpose": "none"
 					}
@@ -195,7 +211,7 @@
 		"general": {
 			"items": [
 				{
-					"name": "Enemies.json",
+					"name": "enemies.json",
 					"type": "application/json",
 					"sid": 470191517962284,
 					"file-info": {

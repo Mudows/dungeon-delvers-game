@@ -1,7 +1,7 @@
 {
-	"name": "Goblin",
+	"name": "HpBarFill",
 	"plugin-id": "Sprite",
-	"sid": 759387334926122,
+	"sid": 206044520150832,
 	"isGlobal": false,
 	"editorNewInstanceIsReplica": true,
 	"instanceVariables": [],
@@ -13,44 +13,20 @@
 				"frames": [
 					{
 						"width": 16,
-						"height": 16,
+						"height": 1,
 						"originX": 0,
 						"originY": 0,
 						"originalSource": "",
 						"exportFormat": "lossless",
 						"exportQuality": 0.8,
 						"fileType": "image/png",
-						"imageSpriteId": 1260139,
-						"collisionPoly": {
-							"points": [
-								0.375,
-								0.0625,
-								0.625,
-								0.0625,
-								0.8125,
-								0.25,
-								0.9375,
-								0.75,
-								0.9375,
-								0.875,
-								0.8125,
-								1,
-								0.25,
-								1,
-								0.125,
-								0.875,
-								0.125,
-								0.75,
-								0.1875,
-								0.25
-							]
-						},
+						"imageSpriteId": 2261325,
 						"useCollisionPoly": true,
 						"duration": 1,
 						"tag": ""
 					}
 				],
-				"sid": 208276916638134,
+				"sid": 329190318453796,
 				"name": "Animation 1",
 				"isLooping": false,
 				"isPingPong": false,

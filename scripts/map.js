@@ -203,13 +203,43 @@ export class GameMap {
   }
 
   /**
-   * Centro de cada sala a partir da segunda — pontos de spawn de inimigos.
+   * Retorna até `count` posições de chão válidas e não sobrepostas
+   * dentro de cada sala (exceto a primeira, que é do jogador).
+   *
+   * @param {number} count - máximo de spawns por sala
+   * @returns {Array<{ x: number, y: number }[]>} array de salas,
+   *   cada uma com um array de posições de spawn
    */
-  getEnemySpawns() {
+  getEnemySpawns(count = 2) {
     return this.rooms.slice(1).map((room) => {
-      const [cx, cy] = roomCenter(room);
-      return { x: cx, y: cy };
+      const positions = this._floorTilesInRoom(room);
+
+      // Embaralha para não spawnar sempre no mesmo canto
+      shuffle(positions);
+
+      return positions.slice(0, count);
     });
+  }
+
+  /**
+   * Retorna todos os tiles de chão (tile === 0) dentro de uma sala.
+   * Exclui a borda da sala para evitar spawns colados na parede.
+   *
+   * @param {{ x, y, w, h }} room
+   * @returns {{ x: number, y: number }[]}
+   */
+  _floorTilesInRoom({ x, y, w, h }) {
+    const tiles = [];
+
+    for (let row = y + 1; row < y + h - 1; row++) {
+      for (let col = x + 1; col < x + w - 1; col++) {
+        if (this.grid[row][col] === 0) {
+          tiles.push({ x: col, y: row });
+        }
+      }
+    }
+
+    return tiles;
   }
 
   /** BFS a partir de (startX, startY) até o tile de chão mais próximo */
@@ -310,4 +340,13 @@ function rectsOverlap(a, b, margin = 0) {
     a.y - margin < b.y + b.h + margin &&
     a.y + a.h + margin > b.y - margin
   );
+}
+
+/** Fisher-Yates shuffle in-place */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
