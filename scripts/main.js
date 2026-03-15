@@ -30,15 +30,18 @@ runOnStartup(async (runtime) => {
       tileset = runtime.objects.simpleTileset.getFirstInstance();
       console.log('✔ Objetos obtidos');
 
-      // Stats base do jogador
-      player.atq       = 3;
-      player.def       = 1;
-      player.weaponAtq = 0;
-      player.hp        = 20;
-      player.maxHp     = 20;
+      // Stats lidos das instVars do objeto player no editor do C3
+      // Configure as seguintes instVars no objeto: atq, def, weaponAtq, hp, maxHp
+      player.atq       = player.instVars.atq;
+      player.def       = player.instVars.def;
+      player.weaponAtq = player.instVars.weaponAtq;
+      player.hp        = player.instVars.hp;
+      player.maxHp     = player.instVars.maxHp;
 
       player.takeDamage = (amount) => {
         player.hp = Math.max(0, player.hp - amount);
+        // Mantém instVar sincronizada com o valor em runtime
+        player.instVars.hp = player.hp;
         hud?.update();
         console.log(`Jogador HP: ${player.hp}/${player.maxHp}`);
         if (player.hp === 0) console.warn('Jogador morreu!');
@@ -89,16 +92,30 @@ runOnStartup(async (runtime) => {
 
     switch (event.key) {
       case 'ArrowUp':
+      case 'w':
+      case 'W':
         action = () => grid.move(player, 0, -1, map, turns.enemies, turns);
         break;
       case 'ArrowDown':
+      case 's':
+      case 'S':
         action = () => grid.move(player, 0,  1, map, turns.enemies, turns);
         break;
       case 'ArrowLeft':
-        action = () => grid.move(player, -1, 0, map, turns.enemies, turns);
+      case 'a':
+      case 'A':
+        action = () => {
+          player.animationFrame = 1;
+          grid.move(player, -1, 0, map, turns.enemies, turns);
+        };
         break;
       case 'ArrowRight':
-        action = () => grid.move(player,  1, 0, map, turns.enemies, turns);
+      case 'd':
+      case 'D':
+        action = () => {
+          player.animationFrame = 0;
+          grid.move(player,  1, 0, map, turns.enemies, turns);
+        };
         break;
     }
 

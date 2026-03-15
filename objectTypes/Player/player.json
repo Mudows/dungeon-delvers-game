@@ -4,7 +4,43 @@
 	"sid": 250059043110531,
 	"isGlobal": false,
 	"editorNewInstanceIsReplica": true,
-	"instanceVariables": [],
+	"instanceVariables": [
+		{
+			"name": "atq",
+			"type": "number",
+			"desc": "Ataque base",
+			"show": true,
+			"sid": 987931766245596
+		},
+		{
+			"name": "def",
+			"type": "number",
+			"desc": "Defesa base",
+			"show": true,
+			"sid": 308751563252416
+		},
+		{
+			"name": "weaponAtq",
+			"type": "number",
+			"desc": "Ataque da arma equipada",
+			"show": true,
+			"sid": 465247030785632
+		},
+		{
+			"name": "hp",
+			"type": "number",
+			"desc": "Pontos de vida atual",
+			"show": true,
+			"sid": 175066313988608
+		},
+		{
+			"name": "maxHp",
+			"type": "number",
+			"desc": "Pontos de vida máximo",
+			"show": true,
+			"sid": 141459861074056
+		}
+	],
 	"behaviorTypes": [
 		{
 			"behaviorId": "bound",
@@ -59,6 +95,44 @@
 						"useCollisionPoly": true,
 						"duration": 1,
 						"tag": ""
+					},
+					{
+						"width": 16,
+						"height": 16,
+						"originX": 0,
+						"originY": 0,
+						"originalSource": "",
+						"exportFormat": "lossless",
+						"exportQuality": 0.8,
+						"fileType": "image/png",
+						"imageSpriteId": 5475599,
+						"collisionPoly": {
+							"points": [
+								0.8125,
+								0.25,
+								0.9375,
+								0.625,
+								0.9375,
+								0.8125,
+								0.75,
+								1,
+								0.1875,
+								1,
+								0.0625,
+								0.875,
+								0.0625,
+								0.75,
+								0.1875,
+								0.25,
+								0.375,
+								0.0625,
+								0.625,
+								0.0625
+							]
+						},
+						"useCollisionPoly": true,
+						"duration": 1,
+						"tag": ""
 					}
 				],
 				"sid": 769454519062575,
@@ -67,7 +141,7 @@
 				"isPingPong": false,
 				"repeatCount": 1,
 				"repeatTo": 0,
-				"speed": 5
+				"speed": 0
 			}
 		],
 		"subfolders": []
