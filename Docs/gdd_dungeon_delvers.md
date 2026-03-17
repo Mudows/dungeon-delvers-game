@@ -196,9 +196,11 @@ Dano mínimo = 1
 
 ## 9. Tecnologia
 
-- **Engine:** PyGame
-- **Testes:** PyTest (lógica e regras)
+- **Engine:** ~~PyGame~~ Construct 3 com JavaScript
+- ~~**Testes:** PyTest (lógica e regras)~~
 - **Arte:** Piskel
+- **Tilesets:** Tilesetter
+- **Áudio:** Bfxr/jsfxr (SFX), Suno AI (BGM)
 
 ---
 
