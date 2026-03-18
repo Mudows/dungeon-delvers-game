@@ -1,0 +1,12 @@
+- Estrutura composta por **10 labirintos** + **nível 0** (hub).
+- **Nível 0:**  
+  Hub inicial com baú de herança e NPC explicativo.
+- Progressão temática:
+  - Labirintos 1–3: Caverna (Goblins)
+  - Labirintos 4–6: Catacumba (Mortos-vivos)
+  - Labirintos 7–9: Inferno congelado
+  - Labirinto 10: Horror cósmico (arena fixa)
+- Para avançar, o jogador deve derrotar **todos os inimigos** do nível.
+- **Derrota:** retorno ao nível 0.
+- **Vitória:** derrota do chefe final e obtenção de item lendário.
+- Estrutura pensada para **expansão futura de labirintos**.
