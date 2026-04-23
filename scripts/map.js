@@ -22,8 +22,24 @@ export class GameMap {
     this.grid  = [];
     this.rooms = [];
 
+    /**
+     * Grid de visibilidade — controla a névoa de guerra.
+     *   'hidden'  → fora do campo de visão atual
+     *   'visible' → dentro do campo de visão atual
+     */
+    this.visibility = [];
+
+    /**
+     * Grid visual — índices de tile sorteados UMA VEZ na geração.
+     * Guardados aqui para não re-sortear a cada renderização,
+     * o que causaria tiles piscando a cada movimento do jogador.
+     */
+    this.visualGrid = [];
+
     this.generateEmpty();
     this.generate();
+    this._initVisibility();
+    this._buildVisualGrid();
   }
 
   // ---------------------------------------------------------------------------
@@ -291,6 +307,95 @@ export class GameMap {
   // Renderização (Construct 3 tilemap)
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // Grid visual — sorteio único de tiles na geração
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Sorteia os índices de tile para cada célula UMA VEZ, logo após a geração.
+   * Isso garante que o mapa não "pisca" ao re-renderizar a cada movimento.
+   * Para regenerar o mapa com tiles diferentes, basta instanciar um novo GameMap.
+   */
+  _buildVisualGrid() {
+    const { floor, wall } = this.theme;
+
+    for (let y = 0; y < this.height; y++) {
+      this.visualGrid[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        const cell = this.grid[y][x];
+        this.visualGrid[y][x] = cell === 1 ? pickTile(wall) : pickTile(floor);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Névoa de guerra
+  // ---------------------------------------------------------------------------
+
+  /** Inicializa toda a visibilidade como 'hidden' */
+  _initVisibility() {
+    for (let y = 0; y < this.height; y++) {
+      this.visibility[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        this.visibility[y][x] = 'hidden';
+      }
+    }
+  }
+
+  /**
+   * Atualiza a visibilidade com base na posição do jogador.
+   * Revela um círculo de raio 2 ao redor do jogador usando
+   * distância euclidiana (dx² + dy² <= r²).
+   *
+   * @param {number} playerGridX
+   * @param {number} playerGridY
+   */
+  updateVisibility(playerGridX, playerGridY) {
+    const RADIUS   = 2;
+    const RADIUS_SQ = RADIUS * RADIUS;
+
+    // Reseta tudo para hidden
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        this.visibility[y][x] = 'hidden';
+      }
+    }
+
+    // Revela círculo ao redor do jogador
+    for (let dy = -RADIUS; dy <= RADIUS; dy++) {
+      for (let dx = -RADIUS; dx <= RADIUS; dx++) {
+        // Distância euclidiana ao quadrado — sem Math.sqrt para performance
+        if (dx * dx + dy * dy <= RADIUS_SQ) {
+          const tx = playerGridX + dx;
+          const ty = playerGridY + dy;
+          if (this.isInside(tx, ty)) {
+            this.visibility[ty][tx] = 'visible';
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Renderiza o mapa aplicando névoa de guerra.
+   * Tiles 'hidden' usam o tile preto definido em themes.js (theme.hidden).
+   * Tiles 'visible' usam o índice pré-sorteado do visualGrid.
+   * Deve ser chamado após updateVisibility().
+   */
+  renderFog(tilemap) {
+    const hiddenTile = this.theme.hidden ?? 0;
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        if (this.visibility[y][x] === 'hidden') {
+          tilemap.setTileAt(x, y, hiddenTile);
+        } else {
+          tilemap.setTileAt(x, y, this.visualGrid[y][x]);
+        }
+      }
+    }
+  }
+
   /**
    * Renderiza o mapa no tilemap do Construct 3 aplicando o tema visual.
    *
@@ -303,13 +408,10 @@ export class GameMap {
    * permanece com valores 0/1/2 para que a lógica do jogo não mude.
    */
   render(tilemap) {
-    const { floor, wall } = this.theme;
-
+    // Usa o visualGrid pré-sorteado — tiles não mudam a cada chamada
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
-        const cell      = this.grid[y][x];
-        const tileIndex = cell === 1 ? pickTile(wall) : pickTile(floor);
-        tilemap.setTileAt(x, y, tileIndex);
+        tilemap.setTileAt(x, y, this.visualGrid[y][x]);
       }
     }
   }

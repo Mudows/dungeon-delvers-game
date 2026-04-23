@@ -30,18 +30,23 @@ export const themes = {
 
   // Tema padrão — Caverna (labirintos 1–3, MVP)
   cave: {
+    // TILE OCULTO: índice do tile sólido preto usado fora do campo de visão.
+    // Ajuste para o índice correto no seu tileset.
+    hidden: 1,
+
     floor: [
-      { index: 0, weight: 85 }, // chão principal
-      { index: 2, weight: 5 }, // variação com pequena pedra
+      { index: 0, weight: 70 }, // chão principal
+      { index: 2, weight: 20 }, // variação com pequena pedra
       { index: 3, weight: 10 }, // variação com rachadura
     ],
     wall: [
-      { index: 1, weight: 100 }, // vazio
+      { index: 1, weight: 100 }, // parede de pedra
     ],
   },
 
   // Tema Catacumba — labirintos 4–6 (a configurar quando o tileset estiver pronto)
   catacomb: {
+    hidden: 1,
     floor: [
       { index: 0, weight: 100 },
     ],
@@ -52,6 +57,7 @@ export const themes = {
 
   // Tema Inferno Congelado — labirintos 7–9 (a configurar)
   frozenHell: {
+    hidden: 1,
     floor: [
       { index: 0, weight: 100 },
     ],

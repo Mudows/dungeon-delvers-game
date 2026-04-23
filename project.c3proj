@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 47600,
+	"savedWithRelease": 47603,
 	"name": "Dungeon Delvers",
 	"runtime": "c3",
 	"useWorker": "auto",
@@ -44,7 +44,7 @@
 		{
 			"type": "behavior",
 			"id": "bound",
-			"name": "[Bound to]",
+			"name": "Restrito ao layout",
 			"author": "Scirra",
 			"bundled": false
 		},
@@ -58,7 +58,10 @@
 	],
 	"uniqueId": "vcza8ht9hj7",
 	"objectTypes": {
-		"items": [],
+		"items": [
+			"Stair",
+			"player_light"
+		],
 		"subfolders": [
 			{
 				"items": [
@@ -174,6 +177,14 @@
 					"name": "themes.js",
 					"type": "application/javascript",
 					"sid": 557847163032635,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "debug.js",
+					"type": "application/javascript",
+					"sid": 348278485486704,
 					"script-info": {
 						"purpose": "none"
 					}
