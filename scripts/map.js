@@ -1,4 +1,5 @@
 import { themes, pickTile } from './themes.js';
+import { randomInt }        from './utils.js';
 
 export class GameMap {
   /**
@@ -258,7 +259,7 @@ export class GameMap {
 
     for (let row = y + 1; row < y + h - 1; row++) {
       for (let col = x + 1; col < x + w - 1; col++) {
-        if (this.grid[row][col] === 0) {
+        if (this.isFloor(col, row)) {
           tiles.push({ x: col, y: row });
         }
       }
@@ -420,10 +421,6 @@ export class GameMap {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 function roomCenter({ x, y, w, h }) {
   return [Math.floor(x + w / 2), Math.floor(y + h / 2)];

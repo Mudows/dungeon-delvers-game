@@ -6,15 +6,16 @@
 
 ## Sistema de Turnos
 - Todos os inimigos têm direito a uma ação por turno.
-- A ordem de ação dos inimigos é definida por uma lista:
-  - Inimigos mais próximos e ativados agem primeiro.
-  - A lista só muda quando um inimigo morre.
+- A ordem de ação dos inimigos segue a ordem de spawn (inserção na lista).
+  - A lista só é alterada quando um inimigo morre.
 
 ## Visão e Exploração
-- Campo de visão limitado, não ultrapassa paredes.
-- Visão definida por uma área de **5×5 quadrados**.
+- Névoa de guerra implementada via layer **Darkness** no Construct 3: fundo preto sólido com sprite `player_light` em blend *destination-out*, que recorta uma área circular de visibilidade ao redor do jogador.
+- O raio de visão é **radial (circular)**, não um quadrado fixo. Raio atual: ~3 tiles (sprite de 96×96 px com tile de 16 px).
+- A FoW visual é cosmética — não bloqueia o campo de visão por paredes.
+- Inimigos verificam **linha de visão** (algoritmo de Bresenham) antes de perseguir: não são ativados através de paredes, mesmo que o jogador esteja dentro do raio de detecção.
 - Salas não visitadas não são renderizadas.
-- Salas descobertas permanecem cobertas por “névoa de guerra” quando fora da visão.
+- Salas descobertas permanecem cobertas pela névoa quando fora da visão.
 
 ## Combate
 - **Combate físico:**
