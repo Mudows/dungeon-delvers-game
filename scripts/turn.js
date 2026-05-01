@@ -31,6 +31,9 @@ export class TurnManager {
       }
     }
 
+    // Remove inimigos que morreram durante o turno dos inimigos (ex: DOT futuro)
+    this.enemies = this.enemies.filter(e => !e.isDead());
+
     this._onTurnEnd?.(this.turn);
     this.turn++;
     return true;
@@ -79,10 +82,9 @@ export class EnemyFactory {
 // Enemy
 // ---------------------------------------------------------------------------
 
-/** Altura em pixels da barra de HP acima do sprite */
 const HP_BAR_OFFSET_Y = 4;
 const HP_BAR_HEIGHT   = 2;
-const HP_BAR_WIDTH    = 16; // igual ao tileSize
+const HP_BAR_WIDTH    = 16;
 
 export class Enemy {
   constructor(gridX, gridY, grid, data, sprite) {
@@ -101,9 +103,6 @@ export class Enemy {
 
     this._dead     = false;
 
-    // Barra de HP: criada como DrawingCanvas ou objeto dedicado no C3.
-    // Por enquanto usamos instVars no sprite se disponível,
-    // e desenhamos via sprite de barra se existir.
     this._initHpBar(grid);
   }
 
@@ -114,60 +113,86 @@ export class Enemy {
   /**
    * Ação do inimigo por turno:
    *   1. Se o jogador estiver adjacente → ataca
-   *   2. Se o jogador estiver no campo de visão 5×5 → persegue (BFS)
+   *   2. Se o jogador estiver no raio de visão E com linha de visão → persegue (BFS)
    *   3. Caso contrário → fica parado
-   *
-   * @param {GameMap}      map
-   * @param {Grid}         grid
-   * @param {object}       player
-   * @param {TurnManager}  turns
    */
   act(map, grid, player, turns) {
-    // 1. Ataca se adjacente
     if (this._isAdjacentTo(player, grid)) {
       const damage = physicalAttack(this, player);
       console.log(`${this.name} atacou o jogador: -${damage} HP`);
       return;
     }
 
-    // 2. Persegue se o jogador estiver dentro do campo de visão 5×5
-    if (this._canSeePlayer(player, grid)) {
-      this._stepTowards(player, map, grid);
+    if (this._canSeePlayer(player, grid, map)) {
+      this._stepTowards(player, map, grid, turns.enemies);
     }
-
-    // 3. Fora do campo de visão: fica parado
   }
 
   /**
-   * Verifica se o jogador está dentro do raio de visão 5×5
-   * (2 tiles em cada direção a partir do inimigo).
-   * Não verifica linha de visão — apenas distância de Chebyshev.
+   * Verifica se o jogador está dentro do raio de visão (Chebyshev, 5×5)
+   * E se há linha de visão direta sem paredes pelo meio (Bresenham).
    */
-  _canSeePlayer(player, grid) {
+  _canSeePlayer(player, grid, map) {
     const a = grid.toGrid(this.x,  this.y);
     const b = grid.toGrid(player.x, player.y);
-    const VISION_RADIUS = 2; // raio de 2 = área 5×5
-    return Math.abs(a.x - b.x) <= VISION_RADIUS &&
-           Math.abs(a.y - b.y) <= VISION_RADIUS;
+    const VISION_RADIUS = 2;
+
+    if (Math.abs(a.x - b.x) > VISION_RADIUS || Math.abs(a.y - b.y) > VISION_RADIUS) {
+      return false;
+    }
+
+    return this._hasLineOfSight(a, b, map);
+  }
+
+  /**
+   * Verifica linha de visão entre dois pontos do grid usando o algoritmo de Bresenham.
+   * Retorna false se qualquer tile intermediário for parede.
+   */
+  _hasLineOfSight(from, to, map) {
+    let x = from.x, y = from.y;
+    const tx = to.x, ty = to.y;
+    if (x === tx && y === ty) return true;
+
+    const dx = Math.abs(tx - x);
+    const dy = Math.abs(ty - y);
+    const sx = x < tx ? 1 : -1;
+    const sy = y < ty ? 1 : -1;
+    let err = dx - dy;
+
+    while (x !== tx || y !== ty) {
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x += sx; }
+      if (e2 <  dx) { err += dx; y += sy; }
+      if (x === tx && y === ty) return true;
+      if (map.isWall(x, y)) return false;
+    }
+
+    return true;
   }
 
   /**
    * Move o inimigo 1 tile em direção ao jogador usando BFS.
-   * BFS garante o caminho mais curto respeitando paredes.
-   * Não entra em tile ocupado por outro inimigo.
+   * Não entra em tile ocupado por outro inimigo vivo.
    */
-  _stepTowards(player, map, grid) {
+  _stepTowards(player, map, grid, enemies = []) {
     const start  = grid.toGrid(this.x,  this.y);
     const target = grid.toGrid(player.x, player.y);
 
-    const next = this._bfsNextStep(start, target, map);
+    // Constrói set de tiles bloqueados por outros inimigos vivos
+    const blocked = new Set();
+    for (const e of enemies) {
+      if (e === this || e.isDead()) continue;
+      const pos = grid.toGrid(e.x, e.y);
+      blocked.add(`${pos.x},${pos.y}`);
+    }
+
+    const next = this._bfsNextStep(start, target, map, blocked);
     if (!next) return;
 
     const pixel = grid.toPixel(next.x, next.y);
     this.x = pixel.x;
     this.y = pixel.y;
 
-    // Atualiza posição do sprite e da barra de HP
     if (this.sprite) {
       this.sprite.x = pixel.x;
       this.sprite.y = pixel.y;
@@ -176,20 +201,15 @@ export class Enemy {
   }
 
   /**
-   * BFS do ponto start até target no mapa.
-   * Retorna o primeiro passo do caminho (tile adjacente ao start),
-   * ou null se não houver caminho.
-   *
-   * @param {{x,y}} start
-   * @param {{x,y}} target
-   * @param {GameMap} map
-   * @returns {{x,y}|null}
+   * BFS do ponto start até target.
+   * Retorna o primeiro passo do caminho ou null se não houver caminho.
+   * Respeita paredes e tiles bloqueados por outros inimigos.
    */
-  _bfsNextStep(start, target, map) {
-    const key    = ({ x, y }) => `${x},${y}`;
-    const queue  = [{ pos: start, path: [] }];
+  _bfsNextStep(start, target, map, blocked = new Set()) {
+    const key     = ({ x, y }) => `${x},${y}`;
+    const queue   = [{ pos: start, path: [] }];
     const visited = new Set([key(start)]);
-    const dirs   = [[0,-1],[0,1],[-1,0],[1,0]];
+    const dirs    = [[0,-1],[0,1],[-1,0],[1,0]];
 
     while (queue.length > 0) {
       const { pos, path } = queue.shift();
@@ -201,18 +221,17 @@ export class Enemy {
         if (visited.has(k)) continue;
         visited.add(k);
 
-        // Destino encontrado — retorna o primeiro passo do caminho
         if (next.x === target.x && next.y === target.y) {
           return path.length > 0 ? path[0] : next;
         }
 
-        if (!map.isWall(next.x, next.y)) {
+        if (!map.isWall(next.x, next.y) && !blocked.has(k)) {
           queue.push({ pos: next, path: path.length === 0 ? [next] : path });
         }
       }
     }
 
-    return null; // sem caminho
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -236,15 +255,6 @@ export class Enemy {
   // Barra de HP
   // ---------------------------------------------------------------------------
 
-  /**
-   * Inicializa a barra de HP.
-   * Estratégia: usa dois objetos TiledBackground (ou Sprite) sobrepostos
-   * nomeados "HpBarBg" (fundo vermelho) e "HpBarFill" (preenchimento verde)
-   * no projeto C3. Se não existirem, a barra é ignorada silenciosamente.
-   *
-   * Alternativa simples sem objetos extras: usar instVars do próprio sprite
-   * e desenhar via evento no C3 — mas isso fica fora do JS.
-   */
   _initHpBar(grid) {
     this._hpBarBg   = null;
     this._hpBarFill = null;
@@ -252,15 +262,10 @@ export class Enemy {
     if (!this.sprite) return;
 
     const runtime = this.sprite.runtime;
-
-    // Tenta criar os objetos de barra se existirem no projeto
     const bgType   = runtime.objects['HpBarBg'];
     const fillType = runtime.objects['HpBarFill'];
 
-    if (!bgType || !fillType) {
-      // Projeto ainda sem objetos de barra — silencioso
-      return;
-    }
+    if (!bgType || !fillType) return;
 
     const bx = this.x;
     const by = this.y - HP_BAR_OFFSET_Y;
@@ -268,13 +273,12 @@ export class Enemy {
     this._hpBarBg   = bgType.createInstance('Game', bx, by);
     this._hpBarFill = fillType.createInstance('Game', bx, by);
 
-    this._hpBarBg.width   = HP_BAR_WIDTH;
-    this._hpBarBg.height  = HP_BAR_HEIGHT;
-    this._hpBarFill.width = HP_BAR_WIDTH;
+    this._hpBarBg.width    = HP_BAR_WIDTH;
+    this._hpBarBg.height   = HP_BAR_HEIGHT;
+    this._hpBarFill.width  = HP_BAR_WIDTH;
     this._hpBarFill.height = HP_BAR_HEIGHT;
   }
 
-  /** Atualiza a largura do fill proporcional ao HP atual */
   _updateHpBar() {
     if (!this._hpBarFill) return;
     this._hpBarFill.width = Math.max(0, HP_BAR_WIDTH * (this.hp / this.maxHp));
@@ -285,7 +289,6 @@ export class Enemy {
     this._hpBarFill?.destroy();
   }
 
-  /** Reposiciona a barra de HP quando o inimigo se move */
   _syncHpBar(px, py) {
     if (this._hpBarBg) {
       this._hpBarBg.x   = px;
@@ -306,7 +309,6 @@ export class Enemy {
     const b = grid.toGrid(other.x, other.y);
     const dx = Math.abs(a.x - b.x);
     const dy = Math.abs(a.y - b.y);
-    // Adjacente = 1 tile de distância em 4 direções (sem diagonal)
     return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
   }
 }

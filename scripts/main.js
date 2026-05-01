@@ -1,3 +1,5 @@
+import { physicalAttack }            from './combat.js';
+import { randomInt }                 from './utils.js';
 import { Grid }                      from './grid.js';
 import { GameMap }                   from './map.js';
 import { TurnManager, EnemyFactory } from './turn.js';
@@ -40,8 +42,14 @@ runOnStartup(async (runtime) => {
   // Inicializa um andar completo
   // ---------------------------------------------------------------------------
   async function loadFloor(floorIndex) {
-    // Limpa turno anterior se existir
-    if (turns) turns.enemies = [];
+    // Destrói sprites dos inimigos do andar anterior antes de limpar a lista
+    if (turns) {
+      for (const enemy of turns.enemies) {
+        enemy.sprite?.destroy();
+        enemy._destroyHpBar();
+      }
+      turns.enemies = [];
+    }
 
     const theme    = FLOOR_THEMES[floorIndex]  ?? 'cave';
     const maxRooms = FLOOR_ROOMS[floorIndex]   ?? 6;
@@ -73,7 +81,7 @@ runOnStartup(async (runtime) => {
     }
     console.log(`✔ Andar ${floorIndex + 1} | ${turns.enemies.length} inimigo(s) | tema: ${theme}`);
 
-    // Escada — aparece na sala mais distante do jogador após todos inimigos morrerem
+    // Escada — aparece próxima ao jogador ao derrotar o último inimigo
     // O sprite "Stair" deve existir no projeto C3
     if (stairSprite) stairSprite.isVisible = false;
   }
@@ -205,27 +213,36 @@ runOnStartup(async (runtime) => {
 
     let action = null;
 
+    const bumpAttack = (actor, target) => {
+      const damage = physicalAttack(actor, target);
+      console.log(`Jogador atacou ${target.name}: -${damage} HP (${target.hp}/${target.maxHp})`);
+      if (target.isDead()) {
+        console.log(`${target.name} foi derrotado!`);
+        turns.removeEnemy(target);
+      }
+    };
+
     switch (event.key) {
       case 'ArrowUp':
       case 'w': case 'W':
-        action = () => grid.move(player, 0, -1, map, turns.enemies, turns);
+        action = () => grid.move(player, 0, -1, map, turns.enemies, bumpAttack);
         break;
       case 'ArrowDown':
       case 's': case 'S':
-        action = () => grid.move(player, 0,  1, map, turns.enemies, turns);
+        action = () => grid.move(player, 0,  1, map, turns.enemies, bumpAttack);
         break;
       case 'ArrowLeft':
       case 'a': case 'A':
         action = () => {
           player.animationFrame = 1;
-          return grid.move(player, -1, 0, map, turns.enemies, turns);
+          return grid.move(player, -1, 0, map, turns.enemies, bumpAttack);
         };
         break;
       case 'ArrowRight':
       case 'd': case 'D':
         action = () => {
           player.animationFrame = 0;
-          return grid.move(player,  1, 0, map, turns.enemies, turns);
+          return grid.move(player,  1, 0, map, turns.enemies, bumpAttack);
         };
         break;
     }
@@ -262,6 +279,3 @@ runOnStartup(async (runtime) => {
   });
 });
 
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
