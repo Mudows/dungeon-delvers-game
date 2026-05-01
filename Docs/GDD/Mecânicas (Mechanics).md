@@ -18,11 +18,15 @@
 - Salas descobertas permanecem cobertas pela névoa quando fora da visão.
 
 ## Combate
-- **Combate físico:**
-  - `(ATQ do jogador + ATQ da arma) − DEF do alvo`
+- **Combate físico — rolagem contestada:**
+  1. `attackRoll = rand(0–10) + ATQ do atacante`
+  2. `defenseRoll = rand(0–10) + DEF do defensor`
+  3. `attackRoll > defenseRoll` → acerto: `dano = ATQ_arma + (attackRoll − defenseRoll)`
+  4. `defenseRoll ≥ attackRoll` → erro: nenhum dano.
+- Dano mínimo ao acertar: **ATQ_arma + 1**. Sem arma equipada, mínimo = **1**.
+- A mesma fórmula se aplica a ataques de inimigos contra o jogador.
 - **Combate mágico:**
   - `(MAG do jogador + MAG da magia) − RES do alvo`
-- Dano mínimo sempre igual a **1**.
 - Ataque físico exige alvo adjacente.
 - Ataque mágico exige alvo dentro do alcance e no campo de visão.
 

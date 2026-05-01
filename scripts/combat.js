@@ -1,25 +1,25 @@
-/**
- * combat.js — Fórmulas e resolução de combate físico.
- *
- * Fórmula (MSAT):
- *   dano físico = (ATQ do atacante + ATQ da arma) − DEF do alvo
- *   dano mínimo = 1
- *
- * Por enquanto não há armas equipadas, então weaponAtq = 0.
- */
+import { randomInt } from './utils.js';
 
 /**
- * Calcula e aplica dano físico de `attacker` em `defender`.
+ * Resolução de combate físico por rolagem contestada.
+ *
+ *   attackRoll  = rand(0–10) + ATQ do atacante
+ *   defenseRoll = rand(0–10) + DEF do defensor
+ *
+ *   Acerto  (attackRoll > defenseRoll): dano = ATQ_arma + (attackRoll − defenseRoll)
+ *   Erro   (defenseRoll ≥ attackRoll): sem dano.
  *
  * @param {{ atq: number, weaponAtq?: number }} attacker
  * @param {{ def: number, takeDamage: Function }} defender
- * @returns {number} dano aplicado
+ * @returns {number} dano aplicado (0 = errou)
  */
 export function physicalAttack(attacker, defender) {
-  const weaponAtq = attacker.weaponAtq ?? 0;
-  const damage    = Math.max(1, (attacker.atq + weaponAtq) - defender.def);
+  const attackRoll  = randomInt(0, 10) + attacker.atq;
+  const defenseRoll = randomInt(0, 10) + (defender.def ?? 0);
 
+  if (attackRoll <= defenseRoll) return 0;
+
+  const damage = (attacker.weaponAtq ?? 0) + (attackRoll - defenseRoll);
   defender.takeDamage(damage);
-
   return damage;
 }
