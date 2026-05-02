@@ -106,18 +106,19 @@ runOnStartup(async (runtime) => {
 
   function _awaitTileSelection(mode) {
     _selectionMode = mode;
-    // A confirmação chega via keydown — veja o handler abaixo
+    _cursorIndex   = 0; // reseta cursor ao iniciar nova seleção
   }
 
   function _confirmTileSelection(tileX, tileY) {
-    const mode = _selectionMode;
+    const mode   = _selectionMode;
+    const tiles  = highlight.tiles; // captura ANTES de limpar
     _selectionMode = null;
     highlight.clear();
 
     if (mode === 'move') {
-      _executeMoveAction(tileX, tileY);
+      _executeMoveAction(tileX, tileY, tiles);
     } else if (mode === 'attack') {
-      _executeAttackAction(tileX, tileY);
+      _executeAttackAction(tileX, tileY, tiles);
     }
   }
 
@@ -132,11 +133,14 @@ runOnStartup(async (runtime) => {
   // Ações do jogador no combate
   // ---------------------------------------------------------------------------
 
-  function _executeMoveAction(tileX, tileY) {
-    // Valida que o tile está na lista de alcançáveis
-    const reachable = highlight.tiles;
+  function _executeMoveAction(tileX, tileY, reachable = []) {
+    // Valida que o tile está na lista de alcançáveis (passada antes do clear)
     const valid = reachable.some(t => t.x === tileX && t.y === tileY);
-    if (!valid) return;
+    if (!valid) {
+      console.warn(`[main] Tile (${tileX},${tileY}) fora do alcance — movimento cancelado.`);
+      combatUI.show(player); // reabre menu
+      return;
+    }
 
     const pixel = grid.toPixel(tileX, tileY);
     player.x = pixel.x;
@@ -145,7 +149,7 @@ runOnStartup(async (runtime) => {
     _afterPlayerAction();
   }
 
-  function _executeAttackAction(tileX, tileY) {
+  function _executeAttackAction(tileX, tileY, _reachable = []) {
     const target = turns.enemies.find(e => {
       if (e.isDead()) return false;
       const pos = grid.toGrid(e.x, e.y);
@@ -199,7 +203,12 @@ runOnStartup(async (runtime) => {
   // ---------------------------------------------------------------------------
 
   queue.onPlayerTurn(() => {
-    // Exibe menu de ações ao início de cada turno do jogador
+    if (!player) {
+      console.warn('[TurnQueue] onPlayerTurn disparado antes de player existir.');
+      return;
+    }
+    // Garante que o menu está limpo antes de abrir
+    combatUI.hide();
     combatUI.show(player);
   });
 
@@ -433,13 +442,19 @@ runOnStartup(async (runtime) => {
       return;
     }
 
-    // ── MODO COMBATE — seleção de tile ──
-    if (gameState.is(GameStates.COMBAT) && _selectionMode && queue.isPlayerTurn) {
-      _handleTileSelectionInput(event);
-      return;
+    // ── MODO COMBATE ──
+    if (gameState.is(GameStates.COMBAT)) {
+      // Menu de ações tem prioridade — consome o evento se estiver visível
+      if (combatUI.isVisible) {
+        combatUI.handleInput(event);
+        return;
+      }
+      // Seleção de tile após escolher ação
+      if (_selectionMode && queue.isPlayerTurn) {
+        _handleTileSelectionInput(event);
+        return;
+      }
     }
-
-    // CombatUI e TurnQueue gerenciam o resto do input no modo COMBAT
   });
 
   function _handleExplorationInput(event) {

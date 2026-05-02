@@ -117,7 +117,7 @@ export class CombatUI {
     this._spawnLabels(player);
     this._updateHighlight();
 
-    this.runtime.addEventListener('keydown', this._handleKey);
+    
   }
 
   /** Esconde e destrói as instâncias de texto do menu. */
@@ -129,7 +129,7 @@ export class CombatUI {
     for (const inst of this._labels) inst?.destroy();
     this._labels = [];
 
-    this.runtime.removeEventListener('keydown', this._handleKey);
+    
   }
 
   // ---------------------------------------------------------------------------
@@ -141,6 +141,13 @@ export class CombatUI {
     if (!textType) {
       console.warn('[CombatUI] Objeto "CombatMenuOption" não encontrado no C3.');
       return;
+    }
+
+    // Diagnóstico: verifica se há instância pré-existente no layout
+    const existingCount = textType.instanceCount;
+    if (existingCount === 0) {
+      console.warn('[CombatUI] "CombatMenuOption" existe mas não tem instâncias no layout. ' +
+        'Adicione uma instância do objeto no editor do C3 (pode deixar fora da tela).');
     }
 
     const origin = this.grid.toGrid(player.x, player.y);
@@ -166,7 +173,7 @@ export class CombatUI {
   // ---------------------------------------------------------------------------
 
   _handleKey(event) {
-    if (!this._visible) return;
+    if (!this._visible) return false;
 
     // Navegação — seta muda seleção
     if (DIR_MAP[event.key]) {
@@ -174,22 +181,23 @@ export class CombatUI {
       const opt    = OPTIONS.find(o => o.action === action);
 
       // Não seleciona placeholders
-      if (opt && !opt.available) return;
+      if (opt && !opt.available) return false;
 
       this._selected = action;
       this._updateHighlight();
-      event.stopPropagation?.();
-      return;
+      return true; // evento consumido
     }
 
     // Confirmação
     if (event.key === 'Enter' || event.key === ' ') {
-      if (!this._selected) return;
+      if (!this._selected) return false;
       const action = this._selected;
       this.hide();
       this._onSelect?.(action);
-      event.stopPropagation?.();
+      return true; // evento consumido
     }
+
+    return false;
   }
 
   /**
@@ -197,6 +205,16 @@ export class CombatUI {
    * Label selecionada: colorRgb branco, scale maior.
    * Labels não selecionadas: colorRgb acinzentado.
    */
+  /**
+   * Processa input de navegação/confirmação — chamado pelo main.js.
+   * Retorna true se o evento foi consumido por este menu.
+   * @param {KeyboardEvent} event
+   * @returns {boolean}
+   */
+  handleInput(event) {
+    return this._handleKey(event);
+  }
+
   _updateHighlight() {
     for (const inst of this._labels) {
       const isSelected = inst._action === this._selected;
