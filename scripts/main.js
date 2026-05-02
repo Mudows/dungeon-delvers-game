@@ -4,24 +4,24 @@ import { Grid }                      from './grid.js';
 import { GameMap }                   from './map.js';
 import { TurnManager, EnemyFactory } from './turn.js';
 import { HUD }                       from './hud.js';
-import { initDebug }                  from './debug.js'; // remover em produção
+import { initDebug }                 from './debug.js'; // remover em produção
 
 // ---------------------------------------------------------------------------
 // Estado global do jogo
 // ---------------------------------------------------------------------------
 
-const FLOOR_THEMES = ['cave', 'cave', 'cave']; // andares 1, 2, 3
-const FLOOR_ROOMS  = [6, 8, 10];               // salas por andar (MSAT)
-const FLOOR_ENEMY_FAMILY = ['goblins', 'goblins', 'goblins']; // a expandir
+const FLOOR_THEMES       = ['cave', 'cave', 'cave'];
+const FLOOR_ROOMS        = [6, 8, 10];
+const FLOOR_ENEMY_FAMILY = ['goblins', 'goblins', 'goblins'];
 
-let currentFloor = 0; // índice do andar atual (0 = andar 1)
+let currentFloor = 0;
 
 async function OnBeforeProjectStart(runtime) {
   runtime.addEventListener('tick', () => Tick(runtime));
 }
 
 function Tick(runtime) {
-  // Animações, UI, etc.
+  // Animações, UI contínua, etc.
 }
 
 runOnStartup(async (runtime) => {
@@ -34,7 +34,7 @@ runOnStartup(async (runtime) => {
   let stairSprite;
   let playerLight;
   let darkness;
-  let waitingConfirm = false; // true quando jogador está sobre a escada
+  let waitingConfirm = false;
   let hud;
   let enemiesData;
 
@@ -42,7 +42,6 @@ runOnStartup(async (runtime) => {
   // Inicializa um andar completo
   // ---------------------------------------------------------------------------
   async function loadFloor(floorIndex) {
-    // Destrói sprites dos inimigos do andar anterior antes de limpar a lista
     if (turns) {
       for (const enemy of turns.enemies) {
         enemy.sprite?.destroy();
@@ -51,9 +50,9 @@ runOnStartup(async (runtime) => {
       turns.enemies = [];
     }
 
-    const theme    = FLOOR_THEMES[floorIndex]  ?? 'cave';
-    const maxRooms = FLOOR_ROOMS[floorIndex]   ?? 6;
-    const family   = FLOOR_ENEMY_FAMILY[floorIndex] ?? 'goblins';
+    const theme    = FLOOR_THEMES[floorIndex]       ?? 'cave';
+    const maxRooms = FLOOR_ROOMS[floorIndex]         ?? 6;
+    const family   = FLOOR_ENEMY_FAMILY[floorIndex]  ?? 'goblins';
 
     map   = new GameMap(32, 32, maxRooms, theme);
     turns = new TurnManager();
@@ -61,7 +60,6 @@ runOnStartup(async (runtime) => {
 
     const factory = new EnemyFactory(enemiesData.families[family]);
 
-    // Renderiza o mapa completo — névoa feita pela layer Darkness no C3
     const start = map.getPlayerStart();
     map.render(tileset);
 
@@ -76,18 +74,16 @@ runOnStartup(async (runtime) => {
       const selected = roomSpawns.slice(0, count);
       for (const sp of selected) {
         const enemy = factory.spawn(sp.x, sp.y, grid, runtime);
-        turns.addEnemy(enemy);
+        if (enemy) turns.addEnemy(enemy);
       }
     }
     console.log(`✔ Andar ${floorIndex + 1} | ${turns.enemies.length} inimigo(s) | tema: ${theme}`);
 
-    // Escada — aparece próxima ao jogador ao derrotar o último inimigo
-    // O sprite "Stair" deve existir no projeto C3
     if (stairSprite) stairSprite.isVisible = false;
   }
 
   // ---------------------------------------------------------------------------
-  // Verifica se o jogador pode avançar de andar
+  // Progressão de andar
   // ---------------------------------------------------------------------------
   function checkFloorClear(playerGridX, playerGridY) {
     if (!stairSprite || !stairSprite.isVisible) return;
@@ -106,7 +102,6 @@ runOnStartup(async (runtime) => {
   function spawnStair() {
     if (!stairSprite) return;
 
-    // Busca tile de chão válido a exatamente 2 tiles do jogador
     const playerPos = grid.toGrid(player.x, player.y);
     const target    = findFloorNearPlayer(playerPos.x, playerPos.y, 2);
 
@@ -123,16 +118,11 @@ runOnStartup(async (runtime) => {
     console.log(`Escada revelada em (${target.x}, ${target.y})`);
   }
 
-  /**
-   * Retorna o primeiro tile de chão encontrado a exatamente `distance` tiles
-   * do ponto (px, py), varrendo em espiral (N, S, L, O e diagonais).
-   * Se não encontrar na distância exata, expande até distance + 2.
-   */
   function findFloorNearPlayer(px, py, distance) {
     for (let d = distance; d <= distance + 2; d++) {
       for (let dy = -d; dy <= d; dy++) {
         for (let dx = -d; dx <= d; dx++) {
-          if (Math.abs(dx) !== d && Math.abs(dy) !== d) continue; // só borda
+          if (Math.abs(dx) !== d && Math.abs(dy) !== d) continue;
           const tx = px + dx;
           const ty = py + dy;
           if (map.isFloor(tx, ty)) return { x: tx, y: ty };
@@ -145,7 +135,6 @@ runOnStartup(async (runtime) => {
   async function advanceFloor() {
     if (currentFloor >= FLOOR_THEMES.length - 1) {
       console.log('🏆 Jogo concluído!');
-      // TODO: tela de vitória
       return;
     }
     currentFloor++;
@@ -161,42 +150,39 @@ runOnStartup(async (runtime) => {
 
       player      = runtime.objects.player.getFirstInstance();
       tileset     = runtime.objects.simpleTileset.getFirstInstance();
-      stairSprite = runtime.objects.Stair?.getFirstInstance() ?? null;
+      stairSprite = runtime.objects.Stair?.getFirstInstance()        ?? null;
       playerLight = runtime.objects.player_light?.getFirstInstance() ?? null;
       darkness    = runtime.layout.getLayer('Darkness');
 
-      if (!stairSprite) {
-        console.warn('[main] Objeto "Stair" não encontrado — progressão de andar desativada.');
-      }
-      if (!playerLight) {
-        console.warn('[main] Objeto "player_light" não encontrado — luz do jogador desativada.');
-      }
+      if (!stairSprite)  console.warn('[main] "Stair" não encontrado — progressão desativada.');
+      if (!playerLight)  console.warn('[main] "player_light" não encontrado — luz desativada.');
 
-      // Stats lidos das instVars do objeto player no editor do C3
-      // Configure as seguintes instVars no objeto: atq, def, weaponAtq, hp, maxHp
-      player.atq       = player.instVars.atq;
-      player.def       = player.instVars.def;
-      player.weaponAtq = player.instVars.weaponAtq;
-      player.hp        = player.instVars.hp;
-      player.maxHp     = player.instVars.maxHp;
-
+      // ---------------------------------------------------------------------------
+      // takeDamage do jogador — escreve direto nas instVars (família baseStats)
+      // ---------------------------------------------------------------------------
       player.takeDamage = (amount) => {
-        player.hp = Math.max(0, player.hp - amount);
-        player.instVars.hp = player.hp;
+        player.instVars.hp_curr = Math.max(0, player.instVars.hp_curr - amount);
         hud?.update();
-        console.log(`Jogador HP: ${player.hp}/${player.maxHp}`);
-        if (player.hp === 0) console.warn('Jogador morreu!');
+        console.log(`Jogador HP: ${player.instVars.hp_curr}/${player.instVars.hp_max}`);
+        if (player.instVars.hp_curr === 0) {
+          console.warn('Jogador morreu!');
+          // TODO: tela de game over
+        }
       };
+
+      // ---------------------------------------------------------------------------
+      // instVars do jogador também precisam expor def_base e atq_base
+      // para que physicalAttack() funcione com o sprite diretamente.
+      // weaponAtq é instVar exclusiva do Player (não está na família).
+      // ---------------------------------------------------------------------------
 
       enemiesData = await runtime.assets.fetchJson('enemies.json');
       console.log('✔ JSON carregado');
 
       await loadFloor(currentFloor);
 
-      // HUD busca instâncias já posicionadas no editor — não cria objetos novos
       hud = new HUD(runtime, player);
 
-      // Debug — remover import e linha abaixo em produção
       initDebug(runtime, { darkness, playerLight });
 
       console.log('✔ Jogo iniciado');
@@ -213,8 +199,9 @@ runOnStartup(async (runtime) => {
 
     let action = null;
 
+    // bumpAttack recebe o sprite do inimigo diretamente — physicalAttack lê instVars
     const bumpAttack = (actor, target) => {
-      const damage = physicalAttack(actor, target);
+      const damage = physicalAttack(actor, target.sprite);
       console.log(`Jogador atacou ${target.name}: -${damage} HP (${target.hp}/${target.maxHp})`);
       if (target.isDead()) {
         console.log(`${target.name} foi derrotado!`);
@@ -247,7 +234,6 @@ runOnStartup(async (runtime) => {
         break;
     }
 
-    // Confirmação de descida — Enter ou Espaço quando sobre a escada
     if ((event.key === 'Enter' || event.key === ' ') && waitingConfirm) {
       waitingConfirm = false;
       await advanceFloor();
@@ -259,7 +245,6 @@ runOnStartup(async (runtime) => {
     const moved = turns.playerAct(action, map, grid, player);
 
     if (moved) {
-      // Sincroniza o sprite de luz com o centro do jogador
       if (playerLight) {
         playerLight.x = player.x + grid.tileSize / 2;
         playerLight.y = player.y + grid.tileSize / 2;
@@ -267,15 +252,12 @@ runOnStartup(async (runtime) => {
 
       const playerPos = grid.toGrid(player.x, player.y);
 
-      // Revela escada quando último inimigo morre
       if (turns.enemies.length === 0 && stairSprite && !stairSprite.isVisible) {
         spawnStair();
-        return; // não verifica escada no mesmo turno que ela aparece
+        return;
       }
 
-      // Verifica se jogador pisou na escada
       checkFloorClear(playerPos.x, playerPos.y);
     }
   });
 });
-

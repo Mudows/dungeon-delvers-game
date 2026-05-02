@@ -1,8 +1,17 @@
 import { physicalAttack } from './combat.js';
 
 /**
- * TurnManager — gerencia o ciclo de turnos do jogo.
+ * turn.js — Ciclo de turnos, factory de inimigos e IA.
+ *
+ * Stats de todas as entidades vivem nas instVars do sprite (família baseStats).
+ * A classe Enemy é um wrapper fino: guarda referência ao sprite e coordenadas
+ * de grid, mas não duplica stats em propriedades JS.
  */
+
+// ---------------------------------------------------------------------------
+// TurnManager
+// ---------------------------------------------------------------------------
+
 export class TurnManager {
   constructor() {
     /** @type {Enemy[]} */
@@ -54,6 +63,15 @@ export class EnemyFactory {
   spawn(gridX, gridY, grid, runtime) {
     const data     = this._weightedPick();
     const instance = this._createSprite(data.spriteName, gridX, gridY, grid, runtime);
+    if (!instance) return null;
+
+    // Escreve stats do JSON direto nas instVars do sprite (família baseStats)
+    instance.instVars.hp_max   = data.stats.hp;
+    instance.instVars.hp_curr  = data.stats.hp;
+    instance.instVars.atq_base = data.stats.atq;
+    instance.instVars.def_base = data.stats.def;
+    instance.instVars.mov_base = data.stats.mov ?? 3;
+
     return new Enemy(gridX, gridY, grid, data, instance);
   }
 
@@ -87,24 +105,42 @@ const HP_BAR_HEIGHT   = 2;
 const HP_BAR_WIDTH    = 16;
 
 export class Enemy {
+  /**
+   * @param {number}         gridX
+   * @param {number}         gridY
+   * @param {Grid}           grid
+   * @param {object}         data   - dados do JSON (id, name, spriteName, stats)
+   * @param {IWorldInstance} sprite - instância C3 com instVars da família baseStats
+   */
   constructor(gridX, gridY, grid, data, sprite) {
-    const pixel    = grid.toPixel(gridX, gridY);
-    this.x         = pixel.x;
-    this.y         = pixel.y;
-    this.id        = data.id;
-    this.name      = data.name;
-    this.sprite    = sprite;
+    const pixel  = grid.toPixel(gridX, gridY);
 
-    this.hp        = data.stats.hp;
-    this.maxHp     = data.stats.hp;
-    this.atq       = data.stats.atq;
-    this.def       = data.stats.def;
-    this.weaponAtq = 0;
+    // Posição em pixels — única fonte de verdade de posição
+    this.x      = pixel.x;
+    this.y      = pixel.y;
 
-    this._dead     = false;
+    // Identidade — não são stats, ficam no wrapper
+    this.id     = data.id;
+    this.name   = data.name;
+
+    // Referência ao sprite — stats vivem em sprite.instVars
+    this.sprite = sprite;
+
+    this._dead  = false;
 
     this._initHpBar(grid);
   }
+
+  // ---------------------------------------------------------------------------
+  // Atalhos de leitura de stats (somente leitura — não duplicam estado)
+  // ---------------------------------------------------------------------------
+
+  get hp()      { return this.sprite?.instVars.hp_curr  ?? 0; }
+  get maxHp()   { return this.sprite?.instVars.hp_max   ?? 0; }
+  get atq()     { return this.sprite?.instVars.atq_base ?? 0; }
+  get def()     { return this.sprite?.instVars.def_base ?? 0; }
+  get mov()     { return this.sprite?.instVars.mov_base ?? 3; }
+  get weaponAtq() { return 0; } // inimigos não têm arma equipada
 
   // ---------------------------------------------------------------------------
   // IA
@@ -118,8 +154,8 @@ export class Enemy {
    */
   act(map, grid, player, turns) {
     if (this._isAdjacentTo(player, grid)) {
-      const damage = physicalAttack(this, player);
-      console.log(`${this.name} atacou o jogador: -${damage} HP`);
+      const damage = physicalAttack(this.sprite, player);
+      console.log(`${this.name} atacou o jogador: -${damage} HP (${player.instVars.hp_curr}/${player.instVars.hp_max})`);
       return;
     }
 
@@ -133,7 +169,7 @@ export class Enemy {
    * E se há linha de visão direta sem paredes pelo meio (Bresenham).
    */
   _canSeePlayer(player, grid, map) {
-    const a = grid.toGrid(this.x,  this.y);
+    const a = grid.toGrid(this.x,   this.y);
     const b = grid.toGrid(player.x, player.y);
     const VISION_RADIUS = 2;
 
@@ -145,7 +181,7 @@ export class Enemy {
   }
 
   /**
-   * Verifica linha de visão entre dois pontos do grid usando o algoritmo de Bresenham.
+   * Linha de visão por Bresenham.
    * Retorna false se qualquer tile intermediário for parede.
    */
   _hasLineOfSight(from, to, map) {
@@ -175,10 +211,9 @@ export class Enemy {
    * Não entra em tile ocupado por outro inimigo vivo.
    */
   _stepTowards(player, map, grid, enemies = []) {
-    const start  = grid.toGrid(this.x,  this.y);
+    const start  = grid.toGrid(this.x,   this.y);
     const target = grid.toGrid(player.x, player.y);
 
-    // Constrói set de tiles bloqueados por outros inimigos vivos
     const blocked = new Set();
     for (const e of enemies) {
       if (e === this || e.isDead()) continue;
@@ -201,9 +236,7 @@ export class Enemy {
   }
 
   /**
-   * BFS do ponto start até target.
-   * Retorna o primeiro passo do caminho ou null se não houver caminho.
-   * Respeita paredes e tiles bloqueados por outros inimigos.
+   * BFS — retorna o primeiro passo do caminho ou null.
    */
   _bfsNextStep(start, target, map, blocked = new Set()) {
     const key     = ({ x, y }) => `${x},${y}`;
@@ -239,13 +272,14 @@ export class Enemy {
   // ---------------------------------------------------------------------------
 
   takeDamage(amount) {
-    this.hp = Math.max(0, this.hp - amount);
+    if (!this.sprite) return;
+    this.sprite.instVars.hp_curr = Math.max(0, this.sprite.instVars.hp_curr - amount);
     this._updateHpBar();
 
-    if (this.hp === 0) {
+    if (this.sprite.instVars.hp_curr === 0) {
       this._dead = true;
       this._destroyHpBar();
-      this.sprite?.destroy();
+      this.sprite.destroy();
     }
   }
 
@@ -261,7 +295,7 @@ export class Enemy {
 
     if (!this.sprite) return;
 
-    const runtime = this.sprite.runtime;
+    const runtime  = this.sprite.runtime;
     const bgType   = runtime.objects['HpBarBg'];
     const fillType = runtime.objects['HpBarFill'];
 
@@ -280,8 +314,9 @@ export class Enemy {
   }
 
   _updateHpBar() {
-    if (!this._hpBarFill) return;
-    this._hpBarFill.width = Math.max(0, HP_BAR_WIDTH * (this.hp / this.maxHp));
+    if (!this._hpBarFill || !this.sprite) return;
+    const ratio = this.sprite.instVars.hp_curr / this.sprite.instVars.hp_max;
+    this._hpBarFill.width = Math.max(0, HP_BAR_WIDTH * ratio);
   }
 
   _destroyHpBar() {
@@ -291,8 +326,8 @@ export class Enemy {
 
   _syncHpBar(px, py) {
     if (this._hpBarBg) {
-      this._hpBarBg.x   = px;
-      this._hpBarBg.y   = py - HP_BAR_OFFSET_Y;
+      this._hpBarBg.x = px;
+      this._hpBarBg.y = py - HP_BAR_OFFSET_Y;
     }
     if (this._hpBarFill) {
       this._hpBarFill.x = px;
@@ -305,8 +340,8 @@ export class Enemy {
   // ---------------------------------------------------------------------------
 
   _isAdjacentTo(other, grid) {
-    const a = grid.toGrid(this.x,  this.y);
-    const b = grid.toGrid(other.x, other.y);
+    const a  = grid.toGrid(this.x,   this.y);
+    const b  = grid.toGrid(other.x,  other.y);
     const dx = Math.abs(a.x - b.x);
     const dy = Math.abs(a.y - b.y);
     return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);

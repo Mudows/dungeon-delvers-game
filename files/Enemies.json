@@ -9,9 +9,9 @@
           "spriteName": "Goblin",
           "spawnChance": 70,
           "stats": {
-            "hp": 6,
-            "atq": 2,
-            "def": 0
+            "hp_max": 6,
+            "atq_base": 2,
+            "def_base": 0
           }
         },
         {
@@ -20,9 +20,9 @@
           "spriteName": "GoblinWarrior",
           "spawnChance": 30,
           "stats": {
-            "hp": 10,
-            "atq": 4,
-            "def": 1
+            "hp_max": 10,
+            "atq_base": 4,
+            "def_base": 1
           }
         }
       ]

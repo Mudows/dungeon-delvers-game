@@ -1,0 +1,49 @@
+{
+	"name": "baseStats",
+	"plugin-id": "Sprite",
+	"sid": 862513535979080,
+	"instanceVariables": [
+		{
+			"name": "hp_max",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 120708520535532
+		},
+		{
+			"name": "hp_curr",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 931591897669426
+		},
+		{
+			"name": "atq_base",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 501487422695811
+		},
+		{
+			"name": "def_base",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 482266151463709
+		},
+		{
+			"name": "mov_base",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 232894117189987
+		}
+	],
+	"behaviorTypes": [],
+	"effectTypes": [],
+	"members": [
+		"GoblinWarrior",
+		"Goblin",
+		"player"
+	]
+}

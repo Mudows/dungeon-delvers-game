@@ -6,39 +6,11 @@
 	"editorNewInstanceIsReplica": true,
 	"instanceVariables": [
 		{
-			"name": "atq",
-			"type": "number",
-			"desc": "Ataque base",
-			"show": true,
-			"sid": 987931766245596
-		},
-		{
-			"name": "def",
-			"type": "number",
-			"desc": "Defesa base",
-			"show": true,
-			"sid": 308751563252416
-		},
-		{
 			"name": "weaponAtq",
 			"type": "number",
-			"desc": "Ataque da arma equipada",
+			"desc": "",
 			"show": true,
-			"sid": 465247030785632
-		},
-		{
-			"name": "hp",
-			"type": "number",
-			"desc": "Pontos de vida atual",
-			"show": true,
-			"sid": 175066313988608
-		},
-		{
-			"name": "maxHp",
-			"type": "number",
-			"desc": "Pontos de vida máximo",
-			"show": true,
-			"sid": 141459861074056
+			"sid": 163764534425222
 		}
 	],
 	"behaviorTypes": [

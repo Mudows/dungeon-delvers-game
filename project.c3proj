@@ -118,7 +118,9 @@
 	"autosaveData": null,
 	"containers": [],
 	"families": {
-		"items": [],
+		"items": [
+			"baseStats"
+		],
 		"subfolders": []
 	},
 	"layouts": {
@@ -220,6 +222,14 @@
 					"name": "Dungeon Delvers.webm",
 					"type": "audio/webm; codecs=opus",
 					"sid": 242345721316125,
+					"file-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "Into the Den of Goblins.webm",
+					"type": "audio/webm; codecs=opus",
+					"sid": 103198947141801,
 					"file-info": {
 						"purpose": "none"
 					}

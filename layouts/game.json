@@ -111,11 +111,12 @@
 					"sid": 520529084536742,
 					"tags": "",
 					"instanceVariables": {
-						"atq": 3,
-						"def": 1,
-						"weaponAtq": 0,
-						"hp": 20,
-						"maxHp": 20
+						"hp_max": 0,
+						"hp_curr": 0,
+						"atq_base": 0,
+						"def_base": 0,
+						"mov_base": 0,
+						"weaponAtq": 0
 					},
 					"behaviors": {
 						"BoundTo": {
