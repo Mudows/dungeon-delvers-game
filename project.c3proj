@@ -87,7 +87,8 @@
 					"PlayerHpText",
 					"titleScreen_background",
 					"fade",
-					"TileHighlight"
+					"TileHighlight",
+					"combatMenuOption"
 				],
 				"subfolders": [],
 				"name": "UI"
@@ -222,6 +223,14 @@
 					"name": "rangeHighlight.js",
 					"type": "application/javascript",
 					"sid": 234686478520161,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "combatUI.js",
+					"type": "application/javascript",
+					"sid": 327034289576620,
 					"script-info": {
 						"purpose": "none"
 					}
