@@ -67,10 +67,11 @@ export class EnemyFactory {
 
     // Escreve stats do JSON direto nas instVars do sprite (família baseStats)
     instance.instVars.hp_max   = data.stats.hp;
-    instance.instVars.hp_curr  = data.stats.hp;
-    instance.instVars.atq_base = data.stats.atq;
-    instance.instVars.def_base = data.stats.def;
-    instance.instVars.mov_base = data.stats.mov ?? 3;
+    instance.instVars.hp_max   = data.stats.hp_max;
+    instance.instVars.hp_curr  = data.stats.hp_max;
+    instance.instVars.atq_base = data.stats.atq_base;
+    instance.instVars.def_base = data.stats.def_base;
+    instance.instVars.mov_base = data.stats.mov_base ?? 3;
 
     return new Enemy(gridX, gridY, grid, data, instance);
   }

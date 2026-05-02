@@ -86,7 +86,8 @@
 					"PlayerHpBarFill",
 					"PlayerHpText",
 					"titleScreen_background",
-					"fade"
+					"fade",
+					"TileHighlight"
 				],
 				"subfolders": [],
 				"name": "UI"
@@ -205,6 +206,22 @@
 					"name": "utils.js",
 					"type": "application/javascript",
 					"sid": 536252937478769,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "gameState.js",
+					"type": "application/javascript",
+					"sid": 933870727162982,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "rangeHighlight.js",
+					"type": "application/javascript",
+					"sid": 234686478520161,
 					"script-info": {
 						"purpose": "none"
 					}

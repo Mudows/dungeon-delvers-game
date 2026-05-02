@@ -11,7 +11,8 @@
           "stats": {
             "hp_max": 6,
             "atq_base": 2,
-            "def_base": 0
+            "def_base": 0,
+            "mov_base": 3
           }
         },
         {
@@ -22,7 +23,8 @@
           "stats": {
             "hp_max": 10,
             "atq_base": 4,
-            "def_base": 1
+            "def_base": 1,
+            "mov_base": 2
           }
         }
       ]

@@ -111,11 +111,11 @@
 					"sid": 520529084536742,
 					"tags": "",
 					"instanceVariables": {
-						"hp_max": 0,
-						"hp_curr": 0,
-						"atq_base": 0,
-						"def_base": 0,
-						"mov_base": 0,
+						"hp_max": 20,
+						"hp_curr": 20,
+						"atq_base": 1,
+						"def_base": 1,
+						"mov_base": 3,
 						"weaponAtq": 0
 					},
 					"behaviors": {
@@ -263,6 +263,43 @@
 						"z": 0,
 						"angle": 0,
 						"blendMode": "destination-out"
+					}
+				},
+				{
+					"type": "TileHighlight",
+					"properties": {
+						"initially-visible": true,
+						"initial-animation": "Animation 1",
+						"initial-frame": 0,
+						"enable-collisions": true,
+						"live-preview": false
+					},
+					"uid": 12,
+					"sid": 745123305376914,
+					"tags": "",
+					"instanceVariables": {},
+					"behaviors": {},
+					"instanceFolderItem": {
+						"sid": 745123305376914,
+						"expanded": true
+					},
+					"showing": true,
+					"locked": false,
+					"world": {
+						"x": 112,
+						"y": -64,
+						"width": 16,
+						"height": 16,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"z": 0,
+						"angle": 0
 					}
 				}
 			],
