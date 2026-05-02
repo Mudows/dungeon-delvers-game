@@ -43,6 +43,13 @@
 		},
 		{
 			"type": "behavior",
+			"id": "Fade",
+			"name": "Esmaecer",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "behavior",
 			"id": "bound",
 			"name": "Restrito ao layout",
 			"author": "Scirra",
@@ -77,7 +84,9 @@
 					"HpBarFill",
 					"PlayerHpBarBg",
 					"PlayerHpBarFill",
-					"PlayerHpText"
+					"PlayerHpText",
+					"titleScreen_background",
+					"fade"
 				],
 				"subfolders": [],
 				"name": "UI"
@@ -114,7 +123,8 @@
 	},
 	"layouts": {
 		"items": [
-			"Layout 1"
+			"game",
+			"title_screen"
 		],
 		"subfolders": []
 	},
@@ -205,7 +215,16 @@
 			"subfolders": []
 		},
 		"music": {
-			"items": [],
+			"items": [
+				{
+					"name": "Dungeon Delvers.webm",
+					"type": "audio/webm; codecs=opus",
+					"sid": 242345721316125,
+					"file-info": {
+						"purpose": "none"
+					}
+				}
+			],
 			"subfolders": []
 		},
 		"video": {
@@ -369,5 +388,5 @@
 	},
 	"viewportWidth": 256,
 	"viewportHeight": 256,
-	"firstLayout": null
+	"firstLayout": "title_screen"
 }
