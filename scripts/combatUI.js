@@ -23,7 +23,7 @@ const OPTIONS = [
   { action: CombatActions.MOVE,   label: '↑ Mover',    offsetX:  0, offsetY: -2, available: true  },
   { action: CombatActions.ATTACK, label: '→ Atacar',   offsetX:  2, offsetY:  0, available: true  },
   { action: CombatActions.MAGIC,  label: '↓ Magia',    offsetX:  0, offsetY:  2, available: false },
-  { action: CombatActions.DEFEND, label: '← Defender', offsetX: -2, offsetY:  0, available: false },
+  { action: CombatActions.DEFEND, label: '← Defender', offsetX: -2, offsetY:  0, available: true  },
 ];
 
 const MENU_LAYER = 'Game';
@@ -62,7 +62,6 @@ export class CombatUI {
   }
 
   _spawnLabels(player) {
-    // Nome real do objeto no Construct 3: objectTypes/UI/combatMenuOption.json.
     const textType = this.runtime.objects['combatMenuOption'] ?? this.runtime.objects['CombatMenuOption'];
 
     if (!textType) {
@@ -77,8 +76,6 @@ export class CombatUI {
       const ty = origin.y + opt.offsetY;
       const px = this.grid.toPixel(tx, ty);
 
-      // O menu precisa seguir coordenadas de mundo, pois deve aparecer em volta do jogador.
-      // Por isso é instanciado na layer Game, não na UI/parallax 0.
       const inst = textType.createInstance(MENU_LAYER, px.x, px.y);
 
       inst.width   = LABEL_WIDTH;
