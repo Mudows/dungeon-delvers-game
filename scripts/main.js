@@ -35,6 +35,7 @@ runOnStartup(async (runtime) => {
   let hud;
   let enemiesData;
   let waitingConfirm = false;
+  let combatEnemies = [];
 
   const combatUI  = new CombatUI(runtime, grid);
   const highlight = new RangeHighlight(runtime, grid);
@@ -49,6 +50,16 @@ runOnStartup(async (runtime) => {
     combatUI.hide();
     queue.reset();
     _selectionMode = null;
+    combatEnemies = [];
+  }
+
+  function _syncCombatEnemies() {
+    combatEnemies = combatEnemies.filter(e => !e.isDead());
+    queue.syncEnemies(combatEnemies);
+  }
+
+  function _getAliveFloorEnemies() {
+    return turns.enemies.filter(e => !e.isDead());
   }
 
   combatUI.onSelect((action) => {
@@ -61,7 +72,7 @@ runOnStartup(async (runtime) => {
         break;
 
       case CombatActions.ATTACK:
-        highlight.show(HighlightMode.ATTACK, player, map, turns.enemies, getWeaponRange());
+        highlight.show(HighlightMode.ATTACK, player, map, combatEnemies, getWeaponRange());
         _awaitTileSelection('attack');
         break;
 
@@ -115,7 +126,7 @@ runOnStartup(async (runtime) => {
   }
 
   function _executeAttackAction(tileX, tileY) {
-    const target = turns.enemies.find(e => {
+    const target = combatEnemies.find(e => {
       if (e.isDead()) return false;
       const pos = grid.toGrid(e.x, e.y);
       return pos.x === tileX && pos.y === tileY;
@@ -128,12 +139,14 @@ runOnStartup(async (runtime) => {
 
     const damage = physicalAttack(player, target.sprite);
 
+    target._updateHpBar?.();
     console.log(`Jogador atacou ${target.name}: -${damage} HP (${target.hp}/${target.maxHp})`);
 
     if (target.hp <= 0 && !target.isDead()) {
       target.takeDamage(0);
       turns.removeEnemy(target);
-      queue.syncEnemies(turns.enemies);
+      combatEnemies = combatEnemies.filter(e => e !== target);
+      _syncCombatEnemies();
       console.log(`${target.name} foi derrotado!`);
     }
 
@@ -143,11 +156,9 @@ runOnStartup(async (runtime) => {
   function _afterPlayerAction() {
     _syncPlayerLight();
     hud?.update();
+    _syncCombatEnemies();
 
-    const aliveEnemies = turns.enemies.filter(e => !e.isDead());
-
-    if (aliveEnemies.length === 0) {
-      turns.enemies = [];
+    if (combatEnemies.length === 0) {
       _endCombat('victory');
       return;
     }
@@ -156,10 +167,11 @@ runOnStartup(async (runtime) => {
   }
 
   function _endCombat(reason) {
+    const remainingFloorEnemies = _getAliveFloorEnemies();
     _cleanupCombatState();
     gameState.exitCombat(reason);
 
-    if (reason === 'victory' && stairSprite && !stairSprite.isVisible) {
+    if (reason === 'victory' && remainingFloorEnemies.length === 0 && stairSprite && !stairSprite.isVisible) {
       spawnStair();
     }
   }
@@ -178,8 +190,9 @@ runOnStartup(async (runtime) => {
       }
     }
 
-    turns.enemies = turns.enemies.filter(e => !e.isDead());
-    queue.syncEnemies(turns.enemies);
+    turns.enemies = _getAliveFloorEnemies();
+    combatEnemies = combatEnemies.filter(e => !e.isDead());
+    queue.syncEnemies(combatEnemies);
 
     hud?.update();
 
@@ -189,7 +202,7 @@ runOnStartup(async (runtime) => {
       return;
     }
 
-    if (turns.enemies.length === 0) {
+    if (combatEnemies.length === 0) {
       _endCombat('victory');
       return;
     }
@@ -199,13 +212,21 @@ runOnStartup(async (runtime) => {
 
   queue.onRoundEnd((round) => {
     console.log(`[TurnQueue] Rodada ${round} encerrada.`);
-    turns.enemies = turns.enemies.filter(e => !e.isDead());
-    queue.syncEnemies(turns.enemies);
+    turns.enemies = _getAliveFloorEnemies();
+    _syncCombatEnemies();
   });
 
   gameState.on('enterCombat', ({ enemies }) => {
-    console.log(`[main] Entrando em combate com ${enemies.length} inimigo(s).`);
-    queue.start(enemies);
+    combatEnemies = enemies.filter(e => !e.isDead());
+
+    console.log(`[main] Entrando em combate com ${combatEnemies.length} inimigo(s).`);
+
+    if (combatEnemies.length === 0) {
+      gameState.exitCombat('victory');
+      return;
+    }
+
+    queue.start(combatEnemies);
   });
 
   gameState.on('exitCombat', ({ reason }) => {
@@ -222,7 +243,7 @@ runOnStartup(async (runtime) => {
     });
 
     if (inSight.length > 0) {
-      gameState.enterCombat(turns.enemies);
+      gameState.enterCombat(inSight);
     }
   }
 
@@ -441,7 +462,7 @@ runOnStartup(async (runtime) => {
     });
 
     if (blocked) {
-      gameState.enterCombat(turns.enemies);
+      gameState.enterCombat([blocked]);
       return;
     }
 
@@ -454,7 +475,7 @@ runOnStartup(async (runtime) => {
 
     const playerPos = grid.toGrid(player.x, player.y);
 
-    if (turns.enemies.length === 0 && stairSprite && !stairSprite.isVisible) {
+    if (_getAliveFloorEnemies().length === 0 && stairSprite && !stairSprite.isVisible) {
       spawnStair();
       return;
     }
@@ -463,6 +484,12 @@ runOnStartup(async (runtime) => {
   }
 
   function _handleTileSelectionInput(event) {
+    switch (event.key) {
+      case 'Escape':
+        _cancelTileSelection();
+        return;
+    }
+
     if (!highlight.hasTiles) return;
 
     switch (event.key) {
@@ -490,10 +517,6 @@ runOnStartup(async (runtime) => {
         }
         break;
       }
-
-      case 'Escape':
-        _cancelTileSelection();
-        break;
     }
   }
 });
