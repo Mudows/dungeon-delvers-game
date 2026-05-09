@@ -13,6 +13,7 @@ import { initDebug }                           from './debug.js';
 const FLOOR_THEMES       = ['cave', 'cave', 'cave'];
 const FLOOR_ROOMS        = [6, 8, 10];
 const FLOOR_ENEMY_FAMILY = ['goblins', 'goblins', 'goblins'];
+const DEFEND_BONUS       = 2;
 
 let currentFloor = 0;
 
@@ -36,6 +37,7 @@ runOnStartup(async (runtime) => {
   let enemiesData;
   let waitingConfirm = false;
   let combatEnemies = [];
+  let defendActive = false;
 
   const combatUI  = new CombatUI(runtime, grid);
   const highlight = new RangeHighlight(runtime, grid);
@@ -51,6 +53,11 @@ runOnStartup(async (runtime) => {
     queue.reset();
     _selectionMode = null;
     combatEnemies = [];
+
+    if (defendActive) {
+      player.instVars.def_base -= DEFEND_BONUS;
+      defendActive = false;
+    }
   }
 
   function _syncCombatEnemies() {
@@ -74,6 +81,10 @@ runOnStartup(async (runtime) => {
       case CombatActions.ATTACK:
         highlight.show(HighlightMode.ATTACK, player, map, combatEnemies, getWeaponRange());
         _awaitTileSelection('attack');
+        break;
+
+      case CombatActions.DEFEND:
+        _executeDefendAction();
         break;
 
       default:
@@ -108,6 +119,17 @@ runOnStartup(async (runtime) => {
     _selectionMode = null;
     highlight.clear();
     combatUI.show(player);
+  }
+
+  function _executeDefendAction() {
+    if (!defendActive) {
+      player.instVars.def_base += DEFEND_BONUS;
+      defendActive = true;
+    }
+
+    console.log(`[Combat] Jogador entrou em defesa (+${DEFEND_BONUS} DEF).`);
+
+    _afterPlayerAction();
   }
 
   function _executeMoveAction(tileX, tileY, reachable = []) {
@@ -177,6 +199,11 @@ runOnStartup(async (runtime) => {
   }
 
   queue.onPlayerTurn(() => {
+    if (defendActive) {
+      player.instVars.def_base -= DEFEND_BONUS;
+      defendActive = false;
+    }
+
     if (!player) return;
 
     combatUI.hide();
@@ -277,7 +304,6 @@ runOnStartup(async (runtime) => {
     player.x = pos.x;
     player.y = pos.y;
 
-    // Buff temporário de MVP para aproximar o player dos stats documentados.
     player.instVars.atq_base = 3;
     player.instVars.def_base = 2;
 
