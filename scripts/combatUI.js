@@ -26,6 +26,10 @@ const OPTIONS = [
   { action: CombatActions.DEFEND, label: '← Defender', offsetX: -2, offsetY:  0, available: false },
 ];
 
+const MENU_LAYER = 'Game';
+const LABEL_WIDTH = 80;
+const LABEL_HEIGHT = 16;
+
 export class CombatUI {
   constructor(runtime, grid) {
     this.runtime   = runtime;
@@ -40,26 +44,27 @@ export class CombatUI {
   onSelect(fn) { this._onSelect = fn; }
 
   show(player) {
-    if (this._visible) return;
+    this.hide();
+
     this._visible  = true;
     this._selected = CombatActions.MOVE;
+
     this._spawnLabels(player);
     this._updateHighlight();
   }
 
   hide() {
-    if (!this._visible) return;
+    for (const inst of this._labels) inst?.destroy();
+
     this._visible  = false;
     this._selected = null;
-
-    for (const inst of this._labels) inst?.destroy();
-    this._labels = [];
+    this._labels   = [];
   }
 
   _spawnLabels(player) {
     // Nome real do objeto no Construct 3: objectTypes/UI/combatMenuOption.json.
-    // Mantém fallback para projetos antigos que tenham sido renomeados com C maiúsculo.
     const textType = this.runtime.objects['combatMenuOption'] ?? this.runtime.objects['CombatMenuOption'];
+
     if (!textType) {
       console.warn('[CombatUI] Objeto "combatMenuOption" não encontrado no C3.');
       return;
@@ -72,7 +77,14 @@ export class CombatUI {
       const ty = origin.y + opt.offsetY;
       const px = this.grid.toPixel(tx, ty);
 
-      const inst = textType.createInstance('UI', px.x, px.y);
+      // O menu precisa seguir coordenadas de mundo, pois deve aparecer em volta do jogador.
+      // Por isso é instanciado na layer Game, não na UI/parallax 0.
+      const inst = textType.createInstance(MENU_LAYER, px.x, px.y);
+
+      inst.width   = LABEL_WIDTH;
+      inst.height  = LABEL_HEIGHT;
+      inst.x       = px.x + (this.grid.tileSize / 2) - (LABEL_WIDTH / 2);
+      inst.y       = px.y + (this.grid.tileSize / 2) - (LABEL_HEIGHT / 2);
       inst.text    = opt.available ? opt.label : opt.label + ' –';
       inst.opacity = opt.available ? 1 : 0.35;
       inst._action = opt.action;
@@ -87,6 +99,7 @@ export class CombatUI {
     if (DIR_MAP[event.key]) {
       const action = DIR_MAP[event.key];
       const opt = OPTIONS.find(o => o.action === action);
+
       if (opt && !opt.available) return false;
 
       this._selected = action;
@@ -96,6 +109,7 @@ export class CombatUI {
 
     if (event.key === 'Enter' || event.key === ' ') {
       if (!this._selected) return false;
+
       const action = this._selected;
       this.hide();
       this._onSelect?.(action);
@@ -108,7 +122,9 @@ export class CombatUI {
   _updateHighlight() {
     for (const inst of this._labels) {
       const isSelected = inst._action === this._selected;
+
       inst.colorRgb = isSelected ? [1, 1, 1] : [0.55, 0.55, 0.55];
+      inst.opacity  = isSelected ? 1 : 0.65;
     }
   }
 }
