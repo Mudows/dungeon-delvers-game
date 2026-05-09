@@ -79,16 +79,17 @@ runOnStartup(async (runtime) => {
 
   function _confirmTileSelection(tileX, tileY) {
     const mode = _selectionMode;
+    const tiles = highlight.tiles;
 
     _selectionMode = null;
     highlight.clear();
 
     if (mode === 'move') {
-      _executeMoveAction(tileX, tileY);
+      _executeMoveAction(tileX, tileY, tiles);
     }
 
     if (mode === 'attack') {
-      _executeAttackAction(tileX, tileY);
+      _executeAttackAction(tileX, tileY, tiles);
     }
   }
 
@@ -98,9 +99,15 @@ runOnStartup(async (runtime) => {
     combatUI.show(player);
   }
 
-  function _executeMoveAction(tileX, tileY) {
-    const pixel = grid.toPixel(tileX, tileY);
+  function _executeMoveAction(tileX, tileY, reachable = []) {
+    const valid = reachable.some(t => t.x === tileX && t.y === tileY);
 
+    if (!valid) {
+      combatUI.show(player);
+      return;
+    }
+
+    const pixel = grid.toPixel(tileX, tileY);
     player.x = pixel.x;
     player.y = pixel.y;
 
@@ -127,6 +134,7 @@ runOnStartup(async (runtime) => {
       target.takeDamage(0);
       turns.removeEnemy(target);
       queue.syncEnemies(turns.enemies);
+      console.log(`${target.name} foi derrotado!`);
     }
 
     _afterPlayerAction();
@@ -157,6 +165,8 @@ runOnStartup(async (runtime) => {
   }
 
   queue.onPlayerTurn(() => {
+    if (!player) return;
+
     combatUI.hide();
     combatUI.show(player);
   });
@@ -174,6 +184,7 @@ runOnStartup(async (runtime) => {
     hud?.update();
 
     if (player.instVars.hp_curr <= 0) {
+      console.warn('[main] Jogador morreu!');
       _endCombat('defeat');
       return;
     }
@@ -186,13 +197,34 @@ runOnStartup(async (runtime) => {
     queue.enemiesDone();
   });
 
+  queue.onRoundEnd((round) => {
+    console.log(`[TurnQueue] Rodada ${round} encerrada.`);
+    turns.enemies = turns.enemies.filter(e => !e.isDead());
+    queue.syncEnemies(turns.enemies);
+  });
+
   gameState.on('enterCombat', ({ enemies }) => {
+    console.log(`[main] Entrando em combate com ${enemies.length} inimigo(s).`);
     queue.start(enemies);
   });
 
-  gameState.on('exitCombat', () => {
+  gameState.on('exitCombat', ({ reason }) => {
+    console.log(`[main] Saindo do combate — ${reason}.`);
     _cleanupCombatState();
   });
+
+  function _checkCombatTrigger() {
+    if (!gameState.is(GameStates.EXPLORING)) return;
+
+    const inSight = turns.enemies.filter(enemy => {
+      if (enemy.isDead()) return false;
+      return enemy._canSeePlayer(player, grid, map);
+    });
+
+    if (inSight.length > 0) {
+      gameState.enterCombat(turns.enemies);
+    }
+  }
 
   async function loadFloor(floorIndex) {
     _cleanupCombatState();
@@ -206,9 +238,11 @@ runOnStartup(async (runtime) => {
       turns.enemies = [];
     }
 
-    const theme = FLOOR_THEMES[floorIndex] ?? 'cave';
-    const maxRooms = FLOOR_ROOMS[floorIndex] ?? 6;
-    const family = FLOOR_ENEMY_FAMILY[floorIndex] ?? 'goblins';
+    waitingConfirm = false;
+
+    const theme    = FLOOR_THEMES[floorIndex]      ?? 'cave';
+    const maxRooms = FLOOR_ROOMS[floorIndex]       ?? 6;
+    const family   = FLOOR_ENEMY_FAMILY[floorIndex] ?? 'goblins';
 
     map = new GameMap(32, 32, maxRooms, theme);
     turns = new TurnManager();
@@ -222,7 +256,7 @@ runOnStartup(async (runtime) => {
     player.x = pos.x;
     player.y = pos.y;
 
-    // Buff do MVP para evitar sensação de combate injusto.
+    // Buff temporário de MVP para aproximar o player dos stats documentados.
     player.instVars.atq_base = 3;
     player.instVars.def_base = 2;
 
@@ -241,19 +275,66 @@ runOnStartup(async (runtime) => {
     }
 
     hud?.update();
+
+    console.log(`✔ Andar ${floorIndex + 1} carregado com ${turns.enemies.length} inimigo(s).`);
+  }
+
+  function checkFloorClear(playerGridX, playerGridY) {
+    if (!stairSprite || !stairSprite.isVisible) return;
+
+    const stairPos = grid.toGrid(stairSprite.x, stairSprite.y);
+    const onStair = stairPos.x === playerGridX && stairPos.y === playerGridY;
+
+    if (onStair && !waitingConfirm) {
+      waitingConfirm = true;
+      console.log('[DEBUG] Jogador na escada — pressione Enter ou Espaço para descer.');
+    }
+
+    if (!onStair) {
+      waitingConfirm = false;
+    }
   }
 
   function spawnStair() {
     if (!stairSprite) return;
 
     const playerPos = grid.toGrid(player.x, player.y);
-    const target = { x: playerPos.x + 2, y: playerPos.y };
+    const target = findFloorNearPlayer(playerPos.x, playerPos.y, 2);
+
+    if (!target) return;
 
     const pixel = grid.toPixel(target.x, target.y);
 
     stairSprite.x = pixel.x;
     stairSprite.y = pixel.y;
     stairSprite.isVisible = true;
+
+    waitingConfirm = false;
+
+    console.log(`Escada revelada em (${target.x}, ${target.y})`);
+  }
+
+  function findFloorNearPlayer(px, py, distance) {
+    for (let d = distance; d <= distance + 2; d++) {
+      for (let dy = -d; dy <= d; dy++) {
+        for (let dx = -d; dx <= d; dx++) {
+          if (Math.abs(dx) !== d && Math.abs(dy) !== d) continue;
+          if (map.isFloor(px + dx, py + dy)) return { x: px + dx, y: py + dy };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async function advanceFloor() {
+    if (currentFloor >= FLOOR_THEMES.length - 1) {
+      console.log('🏆 MVP concluído!');
+      return;
+    }
+
+    currentFloor++;
+    await loadFloor(currentFloor);
   }
 
   function _syncPlayerLight() {
@@ -264,23 +345,43 @@ runOnStartup(async (runtime) => {
   }
 
   runtime.addEventListener('beforeprojectstart', async () => {
-    player = runtime.objects.player.getFirstInstance();
-    tileset = runtime.objects.simpleTileset.getFirstInstance();
-    stairSprite = runtime.objects.Stair?.getFirstInstance() ?? null;
-    playerLight = runtime.objects.player_light?.getFirstInstance() ?? null;
-    darkness = runtime.layout.getLayer('Darkness');
+    try {
+      OnBeforeProjectStart(runtime);
 
-    enemiesData = await runtime.assets.fetchJson('enemies.json');
+      player      = runtime.objects.player.getFirstInstance();
+      tileset     = runtime.objects.simpleTileset.getFirstInstance();
+      stairSprite = runtime.objects.Stair?.getFirstInstance() ?? null;
+      playerLight = runtime.objects.player_light?.getFirstInstance() ?? null;
+      darkness    = runtime.layout.getLayer('Darkness');
 
-    await loadFloor(currentFloor);
+      enemiesData = await runtime.assets.fetchJson('enemies.json');
 
-    hud = new HUD(runtime, player);
+      await loadFloor(currentFloor);
 
-    initDebug(runtime, { darkness, playerLight });
+      hud = new HUD(runtime, player);
+
+      initDebug(runtime, { darkness, playerLight });
+
+      console.log('✔ Jogo iniciado');
+    }
+    catch (err) {
+      console.error('ERRO em beforeprojectstart:', err);
+    }
   });
 
   runtime.addEventListener('keydown', async (event) => {
     if (!map || !turns) return;
+
+    if ((event.key === 'Enter' || event.key === ' ') && waitingConfirm) {
+      waitingConfirm = false;
+      await advanceFloor();
+      return;
+    }
+
+    if (gameState.is(GameStates.EXPLORING)) {
+      _handleExplorationInput(event);
+      return;
+    }
 
     if (gameState.is(GameStates.COMBAT)) {
       if (combatUI.isVisible) {
@@ -288,38 +389,111 @@ runOnStartup(async (runtime) => {
         return;
       }
 
-      if (_selectionMode) {
-        switch (event.key) {
-          case 'ArrowUp':
-            highlight.moveSelection(0, -1);
-            return;
-
-          case 'ArrowDown':
-            highlight.moveSelection(0, 1);
-            return;
-
-          case 'ArrowLeft':
-            highlight.moveSelection(-1, 0);
-            return;
-
-          case 'ArrowRight':
-            highlight.moveSelection(1, 0);
-            return;
-
-          case 'Enter':
-          case ' ': {
-            const tile = highlight.selectedTile;
-            if (tile) {
-              _confirmTileSelection(tile.x, tile.y);
-            }
-            return;
-          }
-
-          case 'Escape':
-            _cancelTileSelection();
-            return;
-        }
+      if (_selectionMode && queue.isPlayerTurn) {
+        _handleTileSelectionInput(event);
       }
     }
   });
+
+  function _handleExplorationInput(event) {
+    let dx = 0;
+    let dy = 0;
+
+    switch (event.key) {
+      case 'ArrowUp':
+      case 'w':
+      case 'W':
+        dy = -1;
+        break;
+
+      case 'ArrowDown':
+      case 's':
+      case 'S':
+        dy = 1;
+        break;
+
+      case 'ArrowLeft':
+      case 'a':
+      case 'A':
+        dx = -1;
+        break;
+
+      case 'ArrowRight':
+      case 'd':
+      case 'D':
+        dx = 1;
+        break;
+
+      default:
+        return;
+    }
+
+    const pos = grid.toGrid(player.x, player.y);
+    const newX = pos.x + dx;
+    const newY = pos.y + dy;
+
+    if (map.isWall(newX, newY)) return;
+
+    const blocked = turns.enemies.find(e => {
+      if (e.isDead()) return false;
+      const ep = grid.toGrid(e.x, e.y);
+      return ep.x === newX && ep.y === newY;
+    });
+
+    if (blocked) {
+      gameState.enterCombat(turns.enemies);
+      return;
+    }
+
+    const pixel = grid.toPixel(newX, newY);
+    player.x = pixel.x;
+    player.y = pixel.y;
+
+    _syncPlayerLight();
+    _checkCombatTrigger();
+
+    const playerPos = grid.toGrid(player.x, player.y);
+
+    if (turns.enemies.length === 0 && stairSprite && !stairSprite.isVisible) {
+      spawnStair();
+      return;
+    }
+
+    checkFloorClear(playerPos.x, playerPos.y);
+  }
+
+  function _handleTileSelectionInput(event) {
+    if (!highlight.hasTiles) return;
+
+    switch (event.key) {
+      case 'ArrowUp':
+        highlight.moveSelection(0, -1);
+        break;
+
+      case 'ArrowDown':
+        highlight.moveSelection(0, 1);
+        break;
+
+      case 'ArrowLeft':
+        highlight.moveSelection(-1, 0);
+        break;
+
+      case 'ArrowRight':
+        highlight.moveSelection(1, 0);
+        break;
+
+      case 'Enter':
+      case ' ': {
+        const tile = highlight.selectedTile;
+        if (tile) {
+          _confirmTileSelection(tile.x, tile.y);
+        }
+        break;
+      }
+
+      case 'Escape':
+        _cancelTileSelection();
+        break;
+    }
+  }
 });
