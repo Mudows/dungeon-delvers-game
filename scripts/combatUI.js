@@ -26,7 +26,7 @@ const OPTIONS = [
   { action: CombatActions.DEFEND, label: '← Defender', offsetX: -2, offsetY:  0, available: true  },
 ];
 
-const MENU_LAYER = 'Game';
+const MENU_LAYER = 'CombatUI';
 const LABEL_WIDTH = 80;
 const LABEL_HEIGHT = 16;
 

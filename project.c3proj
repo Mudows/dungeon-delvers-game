@@ -133,7 +133,9 @@
 		"subfolders": []
 	},
 	"eventSheets": {
-		"items": [],
+		"items": [
+			"game"
+		],
 		"subfolders": []
 	},
 	"rootFileFolders": {
