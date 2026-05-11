@@ -50,6 +50,7 @@ runOnStartup(async (runtime) => {
   function _showGameOverScreen() {
     if (gameOverLayer) {
       gameOverLayer.isVisible = true;
+      gameOverLayer.opacity = 1;
     }
 
     if (txtPressR) {
@@ -75,6 +76,32 @@ runOnStartup(async (runtime) => {
     _cleanupCombatState();
     gameState.enterGameOver('playerDead');
     _showGameOverScreen();
+  }
+
+  async function _restartRun() {
+    console.warn('[main] Reiniciando run...');
+
+    currentFloor = 0;
+
+    if (gameOverLayer) {
+      gameOverLayer.isVisible = false;
+    }
+
+    if (txtPressR) {
+      txtPressR.isVisible = false;
+    }
+
+    if (txtGameOver) {
+      txtGameOver.isVisible = false;
+    }
+
+    gameState.reset();
+
+    player.instVars.hp_curr = player.instVars.hp_max;
+
+    await loadFloor(currentFloor);
+
+    hud?.update();
   }
 
   function getWeaponRange() {
@@ -473,6 +500,10 @@ runOnStartup(async (runtime) => {
     if (!map || !turns) return;
 
     if (gameState.is(GameStates.GAMEOVER)) {
+
+      if (event.key === 'r' || event.key === 'R'){
+        await _restartRun();
+      }
       return;
     }
 
