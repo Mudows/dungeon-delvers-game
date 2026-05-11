@@ -251,7 +251,16 @@
 			"subfolders": []
 		},
 		"sound": {
-			"items": [],
+			"items": [
+				{
+					"name": "player_step.webm",
+					"type": "audio/webm; codecs=opus",
+					"sid": 888892379447915,
+					"file-info": {
+						"purpose": "none"
+					}
+				}
+			],
 			"subfolders": []
 		},
 		"music": {
@@ -268,6 +277,14 @@
 					"name": "Into the Den of Goblins.webm",
 					"type": "audio/webm; codecs=opus",
 					"sid": 103198947141801,
+					"file-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "Dungeon Crawl Echo.webm",
+					"type": "audio/webm; codecs=opus",
+					"sid": 125653972769400,
 					"file-info": {
 						"purpose": "none"
 					}
@@ -375,14 +392,6 @@
 					"name": "enemies.json",
 					"type": "application/json",
 					"sid": 470191517962284,
-					"file-info": {
-						"purpose": "none"
-					}
-				},
-				{
-					"name": "matrizErrada.json",
-					"type": "application/json",
-					"sid": 714636100401644,
 					"file-info": {
 						"purpose": "none"
 					}
