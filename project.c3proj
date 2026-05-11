@@ -68,7 +68,8 @@
 		"items": [
 			"Stair",
 			"player_light",
-			"txt_GameOver"
+			"txt_GameOver",
+			"txt_pressR"
 		],
 		"subfolders": [
 			{

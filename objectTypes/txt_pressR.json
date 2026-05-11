@@ -1,0 +1,10 @@
+{
+	"name": "txt_pressR",
+	"plugin-id": "Text",
+	"sid": 846192811364369,
+	"isGlobal": false,
+	"editorNewInstanceIsReplica": true,
+	"instanceVariables": [],
+	"behaviorTypes": [],
+	"effectTypes": []
+}
