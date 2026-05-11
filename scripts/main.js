@@ -127,6 +127,8 @@ runOnStartup(async (runtime) => {
       defendActive = true;
     }
 
+    console.log(`[Combat] Jogador entrou em defesa (+${DEFEND_BONUS} DEF).`);
+
     _afterPlayerAction();
   }
 
@@ -160,12 +162,14 @@ runOnStartup(async (runtime) => {
     const damage = physicalAttack(player, target.sprite);
 
     target._updateHpBar?.();
+    console.log(`Jogador atacou ${target.name}: -${damage} HP (${target.hp}/${target.maxHp})`);
 
     if (target.hp <= 0 && !target.isDead()) {
       target.takeDamage(0);
       turns.removeEnemy(target);
       combatEnemies = combatEnemies.filter(e => e !== target);
       _syncCombatEnemies();
+      console.log(`${target.name} foi derrotado!`);
     }
 
     _afterPlayerAction();
@@ -220,6 +224,7 @@ runOnStartup(async (runtime) => {
     hud?.update();
 
     if (player.instVars.hp_curr <= 0) {
+      console.warn('[main] Jogador morreu!');
       _endCombat('defeat');
       return;
     }
@@ -232,13 +237,16 @@ runOnStartup(async (runtime) => {
     queue.enemiesDone();
   });
 
-  queue.onRoundEnd(() => {
+  queue.onRoundEnd((round) => {
+    console.log(`[TurnQueue] Rodada ${round} encerrada.`);
     turns.enemies = _getAliveFloorEnemies();
     _syncCombatEnemies();
   });
 
   gameState.on('enterCombat', ({ enemies }) => {
     combatEnemies = enemies.filter(e => !e.isDead());
+
+    console.log(`[main] Entrando em combate com ${combatEnemies.length} inimigo(s).`);
 
     if (combatEnemies.length === 0) {
       gameState.exitCombat('victory');
@@ -248,7 +256,294 @@ runOnStartup(async (runtime) => {
     queue.start(combatEnemies);
   });
 
-  gameState.on('exitCombat', () => {
+  gameState.on('exitCombat', ({ reason }) => {
+    console.log(`[main] Saindo do combate — ${reason}.`);
     _cleanupCombatState();
   });
+
+  function _checkCombatTrigger() {
+    if (!gameState.is(GameStates.EXPLORING)) return;
+
+    const inSight = turns.enemies.filter(enemy => {
+      if (enemy.isDead()) return false;
+      return enemy._canSeePlayer(player, grid, map);
+    });
+
+    if (inSight.length > 0) {
+      gameState.enterCombat(inSight);
+    }
+  }
+
+  async function loadFloor(floorIndex) {
+    _cleanupCombatState();
+
+    if (turns) {
+      for (const enemy of turns.enemies) {
+        enemy.sprite?.destroy();
+        enemy._destroyHpBar();
+      }
+
+      turns.enemies = [];
+    }
+
+    waitingConfirm = false;
+
+    const theme    = FLOOR_THEMES[floorIndex]      ?? 'cave';
+    const maxRooms = FLOOR_ROOMS[floorIndex]       ?? 6;
+    const family   = FLOOR_ENEMY_FAMILY[floorIndex] ?? 'goblins';
+
+    map = new GameMap(32, 32, maxRooms, theme);
+    turns = new TurnManager();
+
+    const factory = new EnemyFactory(enemiesData.families[family]);
+    const start = map.getPlayerStart();
+
+    map.render(tileset);
+
+    const pos = grid.toPixel(start.x, start.y);
+    player.x = pos.x;
+    player.y = pos.y;
+
+
+    player.instVars.atq_base = 3;
+    player.instVars.def_base = 2;
+
+    for (const roomSpawns of map.getEnemySpawns(2)) {
+      const count = randomInt(1, 2);
+      const selected = roomSpawns.slice(0, count);
+
+      for (const sp of selected) {
+        const enemy = factory.spawn(sp.x, sp.y, grid, runtime);
+        if (enemy) turns.addEnemy(enemy);
+      }
+    }
+
+    if (stairSprite) {
+      stairSprite.isVisible = false;
+    }
+
+    hud?.update();
+
+    console.log(`✔ Andar ${floorIndex + 1} carregado com ${turns.enemies.length} inimigo(s).`);
+  }
+
+  function checkFloorClear(playerGridX, playerGridY) {
+    if (!stairSprite || !stairSprite.isVisible) return;
+
+    const stairPos = grid.toGrid(stairSprite.x, stairSprite.y);
+    const onStair = stairPos.x === playerGridX && stairPos.y === playerGridY;
+
+    if (onStair && !waitingConfirm) {
+      waitingConfirm = true;
+      console.log('[DEBUG] Jogador na escada — pressione Enter ou Espaço para descer.');
+    }
+
+    if (!onStair) {
+      waitingConfirm = false;
+    }
+  }
+
+  function spawnStair() {
+    if (!stairSprite) return;
+
+    const playerPos = grid.toGrid(player.x, player.y);
+    const target = findFloorNearPlayer(playerPos.x, playerPos.y, 2);
+
+    if (!target) return;
+
+    const pixel = grid.toPixel(target.x, target.y);
+
+    stairSprite.x = pixel.x;
+    stairSprite.y = pixel.y;
+    stairSprite.isVisible = true;
+
+    waitingConfirm = false;
+
+    console.log(`Escada revelada em (${target.x}, ${target.y})`);
+  }
+
+  function findFloorNearPlayer(px, py, distance) {
+    for (let d = distance; d <= distance + 2; d++) {
+      for (let dy = -d; dy <= d; dy++) {
+        for (let dx = -d; dx <= d; dx++) {
+          if (Math.abs(dx) !== d && Math.abs(dy) !== d) continue;
+          if (map.isFloor(px + dx, py + dy)) return { x: px + dx, y: py + dy };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async function advanceFloor() {
+    if (currentFloor >= FLOOR_THEMES.length - 1) {
+      console.log('🏆 MVP concluído!');
+      return;
+    }
+
+    currentFloor++;
+    await loadFloor(currentFloor);
+  }
+
+  function _syncPlayerLight() {
+    if (!playerLight) return;
+
+    playerLight.x = player.x + grid.tileSize / 2;
+    playerLight.y = player.y + grid.tileSize / 2;
+  }
+
+  runtime.addEventListener('beforeprojectstart', async () => {
+    try {
+      OnBeforeProjectStart(runtime);
+
+      player      = runtime.objects.player.getFirstInstance();
+      tileset     = runtime.objects.simpleTileset.getFirstInstance();
+      stairSprite = runtime.objects.Stair?.getFirstInstance() ?? null;
+      playerLight = runtime.objects.player_light?.getFirstInstance() ?? null;
+      darkness    = runtime.layout.getLayer('Darkness');
+
+      enemiesData = await runtime.assets.fetchJson('enemies.json');
+
+      await loadFloor(currentFloor);
+
+      hud = new HUD(runtime, player);
+
+      initDebug(runtime, { darkness, playerLight });
+
+      console.log('✔ Jogo iniciado');
+    }
+    catch (err) {
+      console.error('ERRO em beforeprojectstart:', err);
+    }
+  });
+
+  runtime.addEventListener('keydown', async (event) => {
+    if (!map || !turns) return;
+
+    if ((event.key === 'Enter' || event.key === ' ') && waitingConfirm) {
+      waitingConfirm = false;
+      await advanceFloor();
+      return;
+    }
+
+    if (gameState.is(GameStates.EXPLORING)) {
+      _handleExplorationInput(event);
+      return;
+    }
+
+    if (gameState.is(GameStates.COMBAT)) {
+      if (combatUI.isVisible) {
+        combatUI.handleInput(event);
+        return;
+      }
+
+      if (_selectionMode && queue.isPlayerTurn) {
+        _handleTileSelectionInput(event);
+      }
+    }
+  });
+
+  function _handleExplorationInput(event) {
+    let dx = 0;
+    let dy = 0;
+
+    switch (event.key) {
+      case 'ArrowUp':
+      case 'w':
+      case 'W':
+        dy = -1;
+        break;
+
+      case 'ArrowDown':
+      case 's':
+      case 'S':
+        dy = 1;
+        break;
+
+      case 'ArrowLeft':
+      case 'a':
+      case 'A':
+        dx = -1;
+        break;
+
+      case 'ArrowRight':
+      case 'd':
+      case 'D':
+        dx = 1;
+        break;
+
+      default:
+        return;
+    }
+
+    const pos = grid.toGrid(player.x, player.y);
+    const newX = pos.x + dx;
+    const newY = pos.y + dy;
+
+    if (map.isWall(newX, newY)) return;
+
+    const blocked = turns.enemies.find(e => {
+      if (e.isDead()) return false;
+      const ep = grid.toGrid(e.x, e.y);
+      return ep.x === newX && ep.y === newY;
+    });
+
+    if (blocked) {
+      gameState.enterCombat([blocked]);
+      return;
+    }
+
+    const pixel = grid.toPixel(newX, newY);
+    player.x = pixel.x;
+    player.y = pixel.y;
+
+    _syncPlayerLight();
+    _checkCombatTrigger();
+
+    const playerPos = grid.toGrid(player.x, player.y);
+
+    if (_getAliveFloorEnemies().length === 0 && stairSprite && !stairSprite.isVisible) {
+      spawnStair();
+      return;
+    }
+
+    checkFloorClear(playerPos.x, playerPos.y);
+  }
+
+  function _handleTileSelectionInput(event) {
+    switch (event.key) {
+      case 'Escape':
+        _cancelTileSelection();
+        return;
+    }
+
+    if (!highlight.hasTiles) return;
+
+    switch (event.key) {
+      case 'ArrowUp':
+        highlight.moveSelection(0, -1);
+        break;
+
+      case 'ArrowDown':
+        highlight.moveSelection(0, 1);
+        break;
+
+      case 'ArrowLeft':
+        highlight.moveSelection(-1, 0);
+        break;
+
+      case 'ArrowRight':
+        highlight.moveSelection(1, 0);
+        break;
+
+      case 'Enter':
+      case ' ': {
+        const tile = highlight.selectedTile;
+        if (tile) {
+          _confirmTileSelection(tile.x, tile.y);
+        }
+        break;
+      }
+    }
+  }
 });
