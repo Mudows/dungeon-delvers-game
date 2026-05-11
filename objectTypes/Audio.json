@@ -1,9 +1,9 @@
 {
-	"name": "audio",
+	"name": "Audio",
 	"plugin-id": "Audio",
 	"sid": 291283562984475,
 	"singleglobal-inst": {
-		"type": "audio",
+		"type": "Audio",
 		"properties": {
 			"timescale-audio": "off",
 			"save-load": "all",

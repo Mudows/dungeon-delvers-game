@@ -69,7 +69,8 @@
 			"Stair",
 			"player_light",
 			"txt_GameOver",
-			"txt_pressR"
+			"txt_pressR",
+			"Audio"
 		],
 		"subfolders": [
 			{
@@ -103,9 +104,7 @@
 				"name": "Player"
 			},
 			{
-				"items": [
-					"audio"
-				],
+				"items": [],
 				"subfolders": [],
 				"name": "PLUGINS"
 			},
