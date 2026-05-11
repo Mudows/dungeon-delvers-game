@@ -35,6 +35,10 @@ runOnStartup(async (runtime) => {
   let darkness;
   let hud;
   let enemiesData;
+  let defeatQuotes = [];
+  let txtPressR;
+  let txtGameOver;
+  let gameOverLayer;
   let waitingConfirm = false;
   let combatEnemies = [];
   let defendActive = false;
@@ -45,6 +49,33 @@ runOnStartup(async (runtime) => {
 
   function getWeaponRange() {
     return player.instVars.weaponAtq > 0 ? (player._weaponRange ?? 1) : 1;
+  }
+
+  function _showGameOverScreen() {
+    gameOverLayer?.isVisible = true;
+
+    if (txtPressR) {
+      txtPressR.isVisible = true;
+      txtPressR.text = 'Pressione R para reiniciar';
+    }
+
+    if (txtGameOver) {
+      txtGameOver.isVisible = true;
+
+      if (Array.isArray(defeatQuotes) && defeatQuotes.length > 0) {
+        txtGameOver.text = defeatQuotes[randomInt(0, defeatQuotes.length - 1)];
+      } else {
+        txtGameOver.text = 'VOCÊ MORREU';
+      }
+    }
+  }
+
+  function _triggerGameOver() {
+    console.warn('[main] GAME OVER');
+
+    _cleanupCombatState();
+    gameState.enterGameOver('playerDead');
+    _showGameOverScreen();
   }
 
   function _cleanupCombatState() {
@@ -162,14 +193,12 @@ runOnStartup(async (runtime) => {
     const damage = physicalAttack(player, target.sprite);
 
     target._updateHpBar?.();
-    console.log(`Jogador atacou ${target.name}: -${damage} HP (${target.hp}/${target.maxHp})`);
 
     if (target.hp <= 0 && !target.isDead()) {
       target.takeDamage(0);
       turns.removeEnemy(target);
       combatEnemies = combatEnemies.filter(e => e !== target);
       _syncCombatEnemies();
-      console.log(`${target.name} foi derrotado!`);
     }
 
     _afterPlayerAction();
@@ -205,12 +234,15 @@ runOnStartup(async (runtime) => {
     }
 
     if (!player) return;
+    if (gameState.is(GameStates.GAMEOVER)) return;
 
     combatUI.hide();
     combatUI.show(player);
   });
 
   queue.onEnemiesTurn((enemies) => {
+    if (gameState.is(GameStates.GAMEOVER)) return;
+
     for (const enemy of enemies) {
       if (!enemy.isDead()) {
         enemy.act(map, grid, player, turns);
@@ -224,8 +256,7 @@ runOnStartup(async (runtime) => {
     hud?.update();
 
     if (player.instVars.hp_curr <= 0) {
-      console.warn('[main] Jogador morreu!');
-      _endCombat('defeat');
+      _triggerGameOver();
       return;
     }
 
@@ -237,16 +268,13 @@ runOnStartup(async (runtime) => {
     queue.enemiesDone();
   });
 
-  queue.onRoundEnd((round) => {
-    console.log(`[TurnQueue] Rodada ${round} encerrada.`);
+  queue.onRoundEnd(() => {
     turns.enemies = _getAliveFloorEnemies();
     _syncCombatEnemies();
   });
 
   gameState.on('enterCombat', ({ enemies }) => {
     combatEnemies = enemies.filter(e => !e.isDead());
-
-    console.log(`[main] Entrando em combate com ${combatEnemies.length} inimigo(s).`);
 
     if (combatEnemies.length === 0) {
       gameState.exitCombat('victory');
@@ -256,8 +284,7 @@ runOnStartup(async (runtime) => {
     queue.start(combatEnemies);
   });
 
-  gameState.on('exitCombat', ({ reason }) => {
-    console.log(`[main] Saindo do combate — ${reason}.`);
+  gameState.on('exitCombat', () => {
     _cleanupCombatState();
   });
 
@@ -322,8 +349,6 @@ runOnStartup(async (runtime) => {
     }
 
     hud?.update();
-
-    console.log(`✔ Andar ${floorIndex + 1} carregado com ${turns.enemies.length} inimigo(s).`);
   }
 
   function checkFloorClear(playerGridX, playerGridY) {
@@ -334,7 +359,6 @@ runOnStartup(async (runtime) => {
 
     if (onStair && !waitingConfirm) {
       waitingConfirm = true;
-      console.log('[DEBUG] Jogador na escada — pressione Enter ou Espaço para descer.');
     }
 
     if (!onStair) {
@@ -357,8 +381,6 @@ runOnStartup(async (runtime) => {
     stairSprite.isVisible = true;
 
     waitingConfirm = false;
-
-    console.log(`Escada revelada em (${target.x}, ${target.y})`);
   }
 
   function findFloorNearPlayer(px, py, distance) {
@@ -376,7 +398,6 @@ runOnStartup(async (runtime) => {
 
   async function advanceFloor() {
     if (currentFloor >= FLOOR_THEMES.length - 1) {
-      console.log('🏆 MVP concluído!');
       return;
     }
 
@@ -400,16 +421,33 @@ runOnStartup(async (runtime) => {
       stairSprite = runtime.objects.Stair?.getFirstInstance() ?? null;
       playerLight = runtime.objects.player_light?.getFirstInstance() ?? null;
       darkness    = runtime.layout.getLayer('Darkness');
+      gameOverLayer = runtime.layout.getLayer('GameOver');
+
+      txtPressR = runtime.objects.txt_pressR?.getFirstInstance() ?? null;
+      txtGameOver = runtime.objects.txt_GameOver?.getFirstInstance() ?? null;
+
+      if (gameOverLayer) {
+        gameOverLayer.isVisible = false;
+      }
+
+      if (txtPressR) txtPressR.isVisible = false;
+      if (txtGameOver) txtGameOver.isVisible = false;
 
       enemiesData = await runtime.assets.fetchJson('enemies.json');
+
+      try {
+        defeatQuotes = await runtime.assets.fetchJson('frasesDerrota.json');
+      }
+      catch {
+        console.warn('[main] frasesDerrota.json não encontrado.');
+        defeatQuotes = [];
+      }
 
       await loadFloor(currentFloor);
 
       hud = new HUD(runtime, player);
 
       initDebug(runtime, { darkness, playerLight });
-
-      console.log('✔ Jogo iniciado');
     }
     catch (err) {
       console.error('ERRO em beforeprojectstart:', err);
@@ -418,6 +456,10 @@ runOnStartup(async (runtime) => {
 
   runtime.addEventListener('keydown', async (event) => {
     if (!map || !turns) return;
+
+    if (gameState.is(GameStates.GAMEOVER)) {
+      return;
+    }
 
     if ((event.key === 'Enter' || event.key === ' ') && waitingConfirm) {
       waitingConfirm = false;
