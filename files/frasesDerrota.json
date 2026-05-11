@@ -1,35 +1,7 @@
-{
-    "c2array": true,
-    "size": [
-        5,
-        1,
-        1
-    ],
-    "data": [
-        [
-            [
-                "Você é fraco. Te falta ódio."
-            ]
-        ],
-        [
-            [
-                "Isso foi um Fatality na sua dignidade."
-            ]
-        ],
-        [
-            [
-                "Tudo o que você tinha que fazer era matar todos eles..."
-            ]
-        ],
-        [
-            [
-                "Achou difícil? Nah, tu que é ruim."
-            ]
-        ],
-        [
-            [
-                "O choro é livre"
-            ]
-        ]
-    ]
-}
+[
+  "Você é fraco. Te falta ódio.",
+  "Vergonhoso",
+  "Patético...",
+  "É só isso que você têm?",
+  "O choro é livre"
+]

@@ -65,7 +65,7 @@ runOnStartup(async (runtime) => {
         txtGameOver.text = defeatQuotes[randomInt(0, defeatQuotes.length - 1)];
       }
       else {
-        txtGameOver.text = 'VOCÊ MORREU';
+        txtGameOver.text = 'Perdeu Playboy';
       }
     }
   }
@@ -477,6 +477,10 @@ runOnStartup(async (runtime) => {
 
       try {
         defeatQuotes = await runtime.assets.fetchJson('frasesDerrota.json');
+
+        txtGameOver.text = defeatQuotes[randomInt(0, defeatQuotes.length - 1)];
+
+        console.log(defeatQuotes)
       }
       catch {
         console.warn('[main] frasesDerrota.json não encontrado.');
@@ -501,7 +505,7 @@ runOnStartup(async (runtime) => {
 
     if (gameState.is(GameStates.GAMEOVER)) {
 
-      if (event.key === 'r' || event.key === 'R'){
+      if (event.key === 'r' || event.key === 'R') {
         await _restartRun();
       }
       return;
