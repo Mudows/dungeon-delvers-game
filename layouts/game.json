@@ -665,7 +665,7 @@
 						"wrapping": "word",
 						"text-direction": "ltr",
 						"icon-set": -1,
-						"initially-visible": false,
+						"initially-visible": true,
 						"origin": "top-left",
 						"read-aloud": false
 					},
@@ -718,7 +718,7 @@
 						"wrapping": "word",
 						"text-direction": "ltr",
 						"icon-set": -1,
-						"initially-visible": false,
+						"initially-visible": true,
 						"origin": "top-left",
 						"read-aloud": false
 					},
@@ -753,7 +753,7 @@
 			],
 			"sid": 522383054908595,
 			"effectTypes": [],
-			"isInitiallyVisible": true,
+			"isInitiallyVisible": false,
 			"isInitiallyInteractive": true,
 			"isHTMLElementsLayer": false,
 			"color": [
