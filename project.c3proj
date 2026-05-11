@@ -67,7 +67,8 @@
 	"objectTypes": {
 		"items": [
 			"Stair",
-			"player_light"
+			"player_light",
+			"txt_GameOver"
 		],
 		"subfolders": [
 			{
@@ -278,7 +279,32 @@
 			"subfolders": []
 		},
 		"font": {
-			"items": [],
+			"items": [
+				{
+					"name": "IosevkaCharon-Regular.ttf",
+					"type": "application/font-sfnt",
+					"sid": 593354416300080,
+					"file-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "Jacquard24-Regular.ttf",
+					"type": "application/font-sfnt",
+					"sid": 107700653165768,
+					"file-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "Jersey15-Regular.ttf",
+					"type": "application/font-sfnt",
+					"sid": 949870040533605,
+					"file-info": {
+						"purpose": "none"
+					}
+				}
+			],
 			"subfolders": []
 		},
 		"icon": {
@@ -348,6 +374,14 @@
 					"name": "enemies.json",
 					"type": "application/json",
 					"sid": 470191517962284,
+					"file-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "frasesDerrota.json",
+					"type": "application/json",
+					"sid": 714636100401644,
 					"file-info": {
 						"purpose": "none"
 					}
