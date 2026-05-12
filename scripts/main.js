@@ -132,6 +132,53 @@ runOnStartup(async (runtime) => {
     });
   }
 
+  async function _flashSprite(sprite) {
+
+    if (!sprite) return;
+
+    const originalOpacity = sprite.opacity;
+
+    sprite.opacity = 0.2;
+
+    await new Promise(r => setTimeout(r, 80));
+
+    sprite.opacity = originalOpacity;
+  }
+
+  async function _fadeAndDestroyEnemy(enemy) {
+
+    if (!enemy?.sprite) return;
+
+    const sprite = enemy.sprite;
+
+    const start = performance.now();
+    const duration = 1500;
+
+    return new Promise(resolve => {
+
+      function step(now) {
+
+        const t = Math.min((now - start) / duration, 1);
+
+        sprite.opacity = 1 - t;
+
+        if (t >= 1) {
+
+          enemy._destroyHpBar?.();
+          sprite.destroy();
+
+          resolve();
+          return;
+        }
+
+        requestAnimationFrame(step);
+      }
+
+      requestAnimationFrame(step);
+    });
+  }
+
+
   function getWeaponRange() {
     return player.instVars.weaponAtq > 0 ? (player._weaponRange ?? 1) : 1;
   }
@@ -250,11 +297,18 @@ runOnStartup(async (runtime) => {
 
     const damage = physicalAttack(player, target.sprite);
 
+    if (damage > 0) {
+      _flashSprite(target.sprite);
+    }
+
     target._updateHpBar?.();
     console.log(`Jogador atacou ${target.name}: -${damage} HP (${target.hp}/${target.maxHp})`);
 
     if (target.hp <= 0 && !target.isDead()) {
       target.takeDamage(0);
+
+      _fadeAndDestroyEnemy(target);
+
       turns.removeEnemy(target);
       combatEnemies = combatEnemies.filter(e => e !== target);
       _syncCombatEnemies();
