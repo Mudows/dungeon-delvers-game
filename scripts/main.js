@@ -513,6 +513,11 @@ runOnStartup(async (runtime) => {
 
   runtime.addEventListener('beforeprojectstart', async () => {
     try {
+      
+      if (runtime.layout.name === 'title_screen') {
+        return;
+      }
+
       OnBeforeProjectStart(runtime);
 
       player = runtime.objects.player.getFirstInstance();
@@ -589,7 +594,7 @@ runOnStartup(async (runtime) => {
 
       return;
     }
-    
+
     if (!map || !turns) return;
 
     if (gameState.is(GameStates.GAMEOVER)) {
