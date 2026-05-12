@@ -157,18 +157,13 @@ export class Enemy {
       const damage = physicalAttack(this.sprite, player);
       if (damage > 0) {
 
-        runtime.callFunction('atk_hit');
-
         player.opacity = 0.2;
 
         setTimeout(() => {
           player.opacity = 1;
         }, 80);
       }
-      else {
 
-        runtime.callFunction('atk_miss');
-      }
       console.log(`${this.name} atacou o jogador: -${damage} HP (${player.instVars.hp_curr}/${player.instVars.hp_max})`);
       return;
     }

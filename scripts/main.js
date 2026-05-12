@@ -394,7 +394,15 @@ runOnStartup(async (runtime) => {
   queue.onEnemiesTurn((enemies) => {
     for (const enemy of enemies) {
       if (!enemy.isDead()) {
+        const oldHp = player.instVars.hp_curr;
         enemy.act(map, grid, player, turns);
+
+        if (player.instVars.hp_curr < oldHp) {
+          runtime.callFunction('atk_hit');
+        }
+        else {
+          runtime.callFunction('atk_miss');
+        }
       }
     }
 
