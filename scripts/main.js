@@ -512,13 +512,16 @@ runOnStartup(async (runtime) => {
   }
 
   runtime.addEventListener('beforeprojectstart', async () => {
+    OnBeforeProjectStart(runtime);
+  });
+
+  runtime.addEventListener('afteranylayoutstart', async () => {
     try {
-      
-      if (runtime.layout.name === 'title_screen') {
+      if (runtime.layout.name !== 'game') {
         return;
       }
 
-      OnBeforeProjectStart(runtime);
+      isTransitioning = false;
 
       player = runtime.objects.player.getFirstInstance();
       tileset = runtime.objects.simpleTileset.getFirstInstance();
@@ -552,15 +555,13 @@ runOnStartup(async (runtime) => {
 
       try {
         defeatQuotes = await runtime.assets.fetchJson('frasesDerrota.json');
-
-        txtGameOver.text = defeatQuotes[randomInt(0, defeatQuotes.length - 1)];
-
-        console.log(defeatQuotes)
       }
       catch {
-        console.warn('[main] frasesDerrota.json não encontrado.');
         defeatQuotes = [];
       }
+
+      currentFloor = 0;
+      gameState.reset();
 
       await loadFloor(currentFloor);
 
@@ -568,27 +569,19 @@ runOnStartup(async (runtime) => {
 
       initDebug(runtime, { darkness, playerLight });
 
-      console.log('✔ Jogo iniciado');
+      console.log('✔ Layout game iniciado');
     }
     catch (err) {
-      console.error('ERRO em beforeprojectstart:', err);
+      console.error('ERRO ao iniciar layout game:', err);
     }
   });
 
   runtime.addEventListener('keydown', async (event) => {
     if (runtime.layout.name === 'title_screen') {
-
       if (isTransitioning) return;
 
       if (event.key === 'Enter') {
-
         isTransitioning = true;
-
-        if (transitionLayer) {
-          transitionLayer.opacity = 0;
-          await _fadeLayer(transitionLayer, 1, 1500);
-        }
-
         runtime.goToLayout('game');
       }
 
