@@ -42,6 +42,9 @@ runOnStartup(async (runtime) => {
   let waitingConfirm = false;
   let combatEnemies = [];
   let defendActive = false;
+  let victoryLayer;
+  let transitionLayer;
+  let isTransitioning = false;
 
   const combatUI = new CombatUI(runtime, grid);
   const highlight = new RangeHighlight(runtime, grid);
@@ -102,6 +105,31 @@ runOnStartup(async (runtime) => {
     await loadFloor(currentFloor);
 
     hud?.update();
+  }
+
+  async function _fadeLayer(layer, targetOpacity, durationMs) {
+    if (!layer) return;
+
+    const startOpacity = layer.opacity;
+    const startTime = performance.now();
+
+    return new Promise(resolve => {
+
+      function step(now) {
+        const t = Math.min((now - startTime) / durationMs, 1);
+
+        layer.opacity = startOpacity + ((targetOpacity - startOpacity) * t);
+
+        if (t >= 1) {
+          resolve();
+          return;
+        }
+
+        requestAnimationFrame(step);
+      }
+
+      requestAnimationFrame(step);
+    });
   }
 
   function getWeaponRange() {
@@ -249,13 +277,44 @@ runOnStartup(async (runtime) => {
     queue.playerDone();
   }
 
+  async function _triggerVictory() {
+
+    if (isTransitioning) return;
+
+    isTransitioning = true;
+
+    _cleanupCombatState();
+
+    if (victoryLayer) {
+      victoryLayer.isVisible = true;
+
+      await _fadeLayer(victoryLayer, 1, 2000);
+    }
+
+    await new Promise(r => setTimeout(r, 3000));
+
+    if (transitionLayer) {
+      await _fadeLayer(transitionLayer, 1, 2000);
+    }
+
+    runtime.goToLayout('title_screen');
+  }
+
   function _endCombat(reason) {
     const remainingFloorEnemies = _getAliveFloorEnemies();
     _cleanupCombatState();
     gameState.exitCombat(reason);
 
-    if (reason === 'victory' && remainingFloorEnemies.length === 0 && stairSprite && !stairSprite.isVisible) {
-      spawnStair();
+    if (reason === 'victory' && remainingFloorEnemies.length === 0) {
+
+      if (currentFloor >= FLOOR_THEMES.length - 1) {
+        _triggerVictory();
+        return;
+      }
+
+      if (stairSprite && !stairSprite.isVisible) {
+        spawnStair();
+      }
     }
   }
 
@@ -462,6 +521,17 @@ runOnStartup(async (runtime) => {
       playerLight = runtime.objects.player_light?.getFirstInstance() ?? null;
       darkness = runtime.layout.getLayer('Darkness');
       gameOverLayer = runtime.layout.getLayer('GameOver');
+      victoryLayer = runtime.layout.getLayer('Victory');
+      transitionLayer = runtime.layout.getLayer('Transition');
+
+      if (victoryLayer) {
+        victoryLayer.isVisible = false;
+        victoryLayer.opacity = 0;
+      }
+
+      if (transitionLayer) {
+        transitionLayer.opacity = 0;
+      }
 
       txtPressR = runtime.objects.txt_pressR?.getFirstInstance() ?? null;
       txtGameOver = runtime.objects.txt_GameOver?.getFirstInstance() ?? null;
@@ -502,6 +572,25 @@ runOnStartup(async (runtime) => {
 
   runtime.addEventListener('keydown', async (event) => {
     if (!map || !turns) return;
+
+    if (runtime.layout.name === 'title_screen') {
+
+      if (isTransitioning) return;
+
+      if (event.key === 'Enter') {
+
+        isTransitioning = true;
+
+        if (transitionLayer) {
+          transitionLayer.opacity = 0;
+          await _fadeLayer(transitionLayer, 1, 1500);
+        }
+
+        runtime.goToLayout('game');
+      }
+
+      return;
+    }
 
     if (gameState.is(GameStates.GAMEOVER)) {
 

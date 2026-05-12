@@ -67,7 +67,8 @@
 	"objectTypes": {
 		"items": [
 			"Stair",
-			"Audio"
+			"Audio",
+			"curtain_black"
 		],
 		"subfolders": [
 			{
