@@ -21,16 +21,10 @@ export function physicalAttack(attacker, defender) {
   const attackRoll  = randomInt(0, 10) + attacker.instVars.atq_base;
   const defenseRoll = randomInt(0, 10) + defender.instVars.def_base;
 
-  if (attackRoll <= defenseRoll){
-    runtime.callFunction('atk_miss');
-    return 0
-  };
+  if (attackRoll <= defenseRoll) return 0;
 
   const weaponAtq = attacker.instVars.weaponAtq ?? 0;
   const damage    = Math.max(1, weaponAtq + (attackRoll - defenseRoll));
-
-  runtime.callFunction('atk_hit');
-
   applyDamage(defender, damage);
   return damage;
 }

@@ -16,17 +16,17 @@ export class TurnManager {
   constructor() {
     /** @type {Enemy[]} */
     this.enemies = [];
-    this.turn    = 1;
+    this.turn = 1;
 
     this._onTurnStart = null;
-    this._onTurnEnd   = null;
+    this._onTurnEnd = null;
   }
 
-  addEnemy(enemy)    { this.enemies.push(enemy); }
+  addEnemy(enemy) { this.enemies.push(enemy); }
   removeEnemy(enemy) { this.enemies = this.enemies.filter((e) => e !== enemy); }
 
   onTurnStart(fn) { this._onTurnStart = fn; }
-  onTurnEnd(fn)   { this._onTurnEnd   = fn; }
+  onTurnEnd(fn) { this._onTurnEnd = fn; }
 
   playerAct(playerAction, map, grid, player) {
     const success = playerAction();
@@ -55,19 +55,19 @@ export class TurnManager {
 
 export class EnemyFactory {
   constructor(family) {
-    this.familyName   = family.name;
-    this.members      = family.members;
+    this.familyName = family.name;
+    this.members = family.members;
     this._totalWeight = this.members.reduce((sum, m) => sum + m.spawnChance, 0);
   }
 
   spawn(gridX, gridY, grid, runtime) {
-    const data     = this._weightedPick();
+    const data = this._weightedPick();
     const instance = this._createSprite(data.spriteName, gridX, gridY, grid, runtime);
     if (!instance) return null;
 
     // Escreve stats do JSON direto nas instVars do sprite (família baseStats)
-    instance.instVars.hp_max   = data.stats.hp_max;
-    instance.instVars.hp_curr  = data.stats.hp_max;
+    instance.instVars.hp_max = data.stats.hp_max;
+    instance.instVars.hp_curr = data.stats.hp_max;
     instance.instVars.atq_base = data.stats.atq_base;
     instance.instVars.def_base = data.stats.def_base;
     instance.instVars.mov_base = data.stats.mov_base ?? 3;
@@ -90,7 +90,7 @@ export class EnemyFactory {
       console.warn(`[EnemyFactory] Objeto "${spriteName}" não encontrado no C3.`);
       return null;
     }
-    const pixel    = grid.toPixel(gridX, gridY);
+    const pixel = grid.toPixel(gridX, gridY);
     const instance = objectType.createInstance('Game', pixel.x, pixel.y);
     return instance;
   }
@@ -101,8 +101,8 @@ export class EnemyFactory {
 // ---------------------------------------------------------------------------
 
 const HP_BAR_OFFSET_Y = 4;
-const HP_BAR_HEIGHT   = 2;
-const HP_BAR_WIDTH    = 16;
+const HP_BAR_HEIGHT = 2;
+const HP_BAR_WIDTH = 16;
 
 export class Enemy {
   /**
@@ -113,20 +113,20 @@ export class Enemy {
    * @param {IWorldInstance} sprite - instância C3 com instVars da família baseStats
    */
   constructor(gridX, gridY, grid, data, sprite) {
-    const pixel  = grid.toPixel(gridX, gridY);
+    const pixel = grid.toPixel(gridX, gridY);
 
     // Posição em pixels — única fonte de verdade de posição
-    this.x      = pixel.x;
-    this.y      = pixel.y;
+    this.x = pixel.x;
+    this.y = pixel.y;
 
     // Identidade — não são stats, ficam no wrapper
-    this.id     = data.id;
-    this.name   = data.name;
+    this.id = data.id;
+    this.name = data.name;
 
     // Referência ao sprite — stats vivem em sprite.instVars
     this.sprite = sprite;
 
-    this._dead  = false;
+    this._dead = false;
 
     this._initHpBar(grid);
   }
@@ -135,11 +135,11 @@ export class Enemy {
   // Atalhos de leitura de stats (somente leitura — não duplicam estado)
   // ---------------------------------------------------------------------------
 
-  get hp()      { return this.sprite?.instVars.hp_curr  ?? 0; }
-  get maxHp()   { return this.sprite?.instVars.hp_max   ?? 0; }
-  get atq()     { return this.sprite?.instVars.atq_base ?? 0; }
-  get def()     { return this.sprite?.instVars.def_base ?? 0; }
-  get mov()     { return this.sprite?.instVars.mov_base ?? 3; }
+  get hp() { return this.sprite?.instVars.hp_curr ?? 0; }
+  get maxHp() { return this.sprite?.instVars.hp_max ?? 0; }
+  get atq() { return this.sprite?.instVars.atq_base ?? 0; }
+  get def() { return this.sprite?.instVars.def_base ?? 0; }
+  get mov() { return this.sprite?.instVars.mov_base ?? 3; }
   get weaponAtq() { return 0; } // inimigos não têm arma equipada
 
   // ---------------------------------------------------------------------------
@@ -155,6 +155,20 @@ export class Enemy {
   act(map, grid, player, turns) {
     if (this._isAdjacentTo(player, grid)) {
       const damage = physicalAttack(this.sprite, player);
+      if (damage > 0) {
+
+        runtime.callFunction('atk_hit');
+
+        player.opacity = 0.2;
+
+        setTimeout(() => {
+          player.opacity = 1;
+        }, 80);
+      }
+      else {
+
+        runtime.callFunction('atk_miss');
+      }
       console.log(`${this.name} atacou o jogador: -${damage} HP (${player.instVars.hp_curr}/${player.instVars.hp_max})`);
       return;
     }
@@ -169,7 +183,7 @@ export class Enemy {
    * E se há linha de visão direta sem paredes pelo meio (Bresenham).
    */
   _canSeePlayer(player, grid, map) {
-    const a = grid.toGrid(this.x,   this.y);
+    const a = grid.toGrid(this.x, this.y);
     const b = grid.toGrid(player.x, player.y);
     const VISION_RADIUS = 2;
 
@@ -198,7 +212,7 @@ export class Enemy {
     while (x !== tx || y !== ty) {
       const e2 = 2 * err;
       if (e2 > -dy) { err -= dy; x += sx; }
-      if (e2 <  dx) { err += dx; y += sy; }
+      if (e2 < dx) { err += dx; y += sy; }
       if (x === tx && y === ty) return true;
       if (map.isWall(x, y)) return false;
     }
@@ -211,7 +225,7 @@ export class Enemy {
    * Não entra em tile ocupado por outro inimigo vivo.
    */
   _stepTowards(player, map, grid, enemies = []) {
-    const start  = grid.toGrid(this.x,   this.y);
+    const start = grid.toGrid(this.x, this.y);
     const target = grid.toGrid(player.x, player.y);
 
     const blocked = new Set();
@@ -239,17 +253,17 @@ export class Enemy {
    * BFS — retorna o primeiro passo do caminho ou null.
    */
   _bfsNextStep(start, target, map, blocked = new Set()) {
-    const key     = ({ x, y }) => `${x},${y}`;
-    const queue   = [{ pos: start, path: [] }];
+    const key = ({ x, y }) => `${x},${y}`;
+    const queue = [{ pos: start, path: [] }];
     const visited = new Set([key(start)]);
-    const dirs    = [[0,-1],[0,1],[-1,0],[1,0]];
+    const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
 
     while (queue.length > 0) {
       const { pos, path } = queue.shift();
 
       for (const [dx, dy] of dirs) {
         const next = { x: pos.x + dx, y: pos.y + dy };
-        const k    = key(next);
+        const k = key(next);
 
         if (visited.has(k)) continue;
         visited.add(k);
@@ -290,13 +304,13 @@ export class Enemy {
   // ---------------------------------------------------------------------------
 
   _initHpBar(grid) {
-    this._hpBarBg   = null;
+    this._hpBarBg = null;
     this._hpBarFill = null;
 
     if (!this.sprite) return;
 
-    const runtime  = this.sprite.runtime;
-    const bgType   = runtime.objects['HpBarBg'];
+    const runtime = this.sprite.runtime;
+    const bgType = runtime.objects['HpBarBg'];
     const fillType = runtime.objects['HpBarFill'];
 
     if (!bgType || !fillType) return;
@@ -304,12 +318,12 @@ export class Enemy {
     const bx = this.x;
     const by = this.y - HP_BAR_OFFSET_Y;
 
-    this._hpBarBg   = bgType.createInstance('Game', bx, by);
+    this._hpBarBg = bgType.createInstance('Game', bx, by);
     this._hpBarFill = fillType.createInstance('Game', bx, by);
 
-    this._hpBarBg.width    = HP_BAR_WIDTH;
-    this._hpBarBg.height   = HP_BAR_HEIGHT;
-    this._hpBarFill.width  = HP_BAR_WIDTH;
+    this._hpBarBg.width = HP_BAR_WIDTH;
+    this._hpBarBg.height = HP_BAR_HEIGHT;
+    this._hpBarFill.width = HP_BAR_WIDTH;
     this._hpBarFill.height = HP_BAR_HEIGHT;
   }
 
@@ -340,8 +354,8 @@ export class Enemy {
   // ---------------------------------------------------------------------------
 
   _isAdjacentTo(other, grid) {
-    const a  = grid.toGrid(this.x,   this.y);
-    const b  = grid.toGrid(other.x,  other.y);
+    const a = grid.toGrid(this.x, this.y);
+    const b = grid.toGrid(other.x, other.y);
     const dx = Math.abs(a.x - b.x);
     const dy = Math.abs(a.y - b.y);
     return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);

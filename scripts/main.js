@@ -298,7 +298,14 @@ runOnStartup(async (runtime) => {
     const damage = physicalAttack(player, target.sprite);
 
     if (damage > 0) {
+
+      runtime.callFunction('atk_hit');
+
       _flashSprite(target.sprite);
+    }
+    else {
+
+      runtime.callFunction('atk_miss');
     }
 
     target._updateHpBar?.();
