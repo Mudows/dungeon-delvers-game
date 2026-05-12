@@ -260,6 +260,22 @@
 					"file-info": {
 						"purpose": "none"
 					}
+				},
+				{
+					"name": "atk_hit.webm",
+					"type": "audio/webm; codecs=opus",
+					"sid": 901111167354137,
+					"file-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "atk_miss.webm",
+					"type": "audio/webm; codecs=opus",
+					"sid": 904113279474482,
+					"file-info": {
+						"purpose": "none"
+					}
 				}
 			],
 			"subfolders": []
