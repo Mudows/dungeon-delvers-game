@@ -571,8 +571,6 @@ runOnStartup(async (runtime) => {
   });
 
   runtime.addEventListener('keydown', async (event) => {
-    if (!map || !turns) return;
-
     if (runtime.layout.name === 'title_screen') {
 
       if (isTransitioning) return;
@@ -591,6 +589,8 @@ runOnStartup(async (runtime) => {
 
       return;
     }
+    
+    if (!map || !turns) return;
 
     if (gameState.is(GameStates.GAMEOVER)) {
 
