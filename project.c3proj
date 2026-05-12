@@ -67,9 +67,6 @@
 	"objectTypes": {
 		"items": [
 			"Stair",
-			"player_light",
-			"txt_GameOver",
-			"txt_pressR",
 			"Audio"
 		],
 		"subfolders": [
@@ -91,14 +88,18 @@
 					"titleScreen_background",
 					"fade",
 					"TileHighlight",
-					"combatMenuOption"
+					"combatMenuOption",
+					"txt_GameOver",
+					"txt_pressR",
+					"txt_victory"
 				],
 				"subfolders": [],
 				"name": "UI"
 			},
 			{
 				"items": [
-					"player"
+					"player",
+					"player_light"
 				],
 				"subfolders": [],
 				"name": "Player"

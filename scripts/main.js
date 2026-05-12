@@ -585,7 +585,6 @@ runOnStartup(async (runtime) => {
     }
 
     const pixel = grid.toPixel(newX, newY);
-    audio = runtime.objects.Audio.getFirstInstance();
     player.x = pixel.x;
     player.y = pixel.y;
     runtime.callFunction('playerStep');
