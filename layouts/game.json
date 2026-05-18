@@ -113,8 +113,12 @@
 					"instanceVariables": {
 						"hp_max": 20,
 						"hp_curr": 20,
+						"mana_base": 0,
+						"mana_curr": 0,
 						"atq_base": 1,
+						"mag_base": 0,
 						"def_base": 1,
+						"res_base": 0,
 						"mov_base": 3,
 						"weaponAtq": 0
 					},

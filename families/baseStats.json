@@ -18,6 +18,20 @@
 			"sid": 931591897669426
 		},
 		{
+			"name": "mana_base",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 249575338729304
+		},
+		{
+			"name": "mana_curr",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 365357462291622
+		},
+		{
 			"name": "atq_base",
 			"type": "number",
 			"desc": "",
@@ -25,11 +39,25 @@
 			"sid": 501487422695811
 		},
 		{
+			"name": "mag_base",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 950683073757992
+		},
+		{
 			"name": "def_base",
 			"type": "number",
 			"desc": "",
 			"show": true,
 			"sid": 482266151463709
+		},
+		{
+			"name": "res_base",
+			"type": "number",
+			"desc": "",
+			"show": true,
+			"sid": 170465014481723
 		},
 		{
 			"name": "mov_base",
