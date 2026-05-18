@@ -25,7 +25,8 @@
 3. [x] Implementar sistema de turnos
 4. [x] Combate básico funcional
 5. [x] Inimigos simples
-6. [ ] IA de Movimento dos Inimigos
-7. [ ] Névoa de guerra (visão 5x5)
-8. [ ] Interface mínima
+6. [x] IA de Movimento dos Inimigos
+7. [x] Névoa de guerra (visão 5x5)
+8. [x] Interface mínima
 9. [ ] Progressão do jogador entre andares
+10. [ ] Inventário funcional de 9 slots
