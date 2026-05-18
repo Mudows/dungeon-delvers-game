@@ -9,6 +9,7 @@ import { CombatUI, CombatActions } from './combatUI.js';
 import { RangeHighlight, HighlightMode } from './rangeHighlight.js';
 import { TurnQueue } from './turnQueue.js';
 import { initDebug } from './debug.js';
+import { ProgressionSystem } from './progression.js';
 
 const FLOOR_THEMES = ['cave', 'cave', 'cave'];
 const FLOOR_ROOMS = [6, 8, 10];
@@ -49,6 +50,7 @@ runOnStartup(async (runtime) => {
   const combatUI = new CombatUI(runtime, grid);
   const highlight = new RangeHighlight(runtime, grid);
   const queue = new TurnQueue();
+  const progression = new ProgressionSystem(runtime);
 
   function _showGameOverScreen() {
     if (gameOverLayer) {
@@ -374,7 +376,9 @@ runOnStartup(async (runtime) => {
       }
 
       if (stairSprite && !stairSprite.isVisible) {
-        spawnStair();
+        progression.show(player, currentFloor).then(() => {
+          spawnStair();
+        });
       }
     }
   }

@@ -15,6 +15,13 @@
 		},
 		{
 			"type": "plugin",
+			"id": "Keyboard",
+			"name": "Teclado",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
 			"id": "Sprite",
 			"name": "Sprite",
 			"author": "Scirra",
@@ -67,7 +74,6 @@
 	"objectTypes": {
 		"items": [
 			"Stair",
-			"Audio",
 			"curtain_black"
 		],
 		"subfolders": [
@@ -92,7 +98,17 @@
 					"combatMenuOption",
 					"txt_GameOver",
 					"txt_pressR",
-					"txt_victory"
+					"txt_victory",
+					"ProgressionOverlay",
+					"ProgressionBtn0",
+					"ProgressionBtn1",
+					"ProgressionBtn2",
+					"ProgressionBtn3",
+					"ProgressionLabel0",
+					"ProgressionLabel1",
+					"ProgressionLabel2",
+					"ProgressionLabel3",
+					"ProgressionTitle"
 				],
 				"subfolders": [],
 				"name": "UI"
@@ -106,7 +122,10 @@
 				"name": "Player"
 			},
 			{
-				"items": [],
+				"items": [
+					"Audio",
+					"Teclado"
+				],
 				"subfolders": [],
 				"name": "PLUGINS"
 			},
@@ -244,6 +263,14 @@
 					"name": "turnQueue.js",
 					"type": "application/javascript",
 					"sid": 541267203941425,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "progression.js",
+					"type": "application/javascript",
+					"sid": 689880617603909,
 					"script-info": {
 						"purpose": "none"
 					}

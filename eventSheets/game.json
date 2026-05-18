@@ -158,6 +158,31 @@
 				}
 			],
 			"sid": 159896718664528
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-key-pressed",
+					"objectClass": "Teclado",
+					"sid": 970945650859262,
+					"parameters": {
+						"key": 88
+					}
+				}
+			],
+			"actions": [
+				{
+					"id": "set-instvar-value",
+					"objectClass": "player",
+					"sid": 908673240412441,
+					"parameters": {
+						"instance-variable": "hp_curr",
+						"value": "20"
+					}
+				}
+			],
+			"sid": 875516438445369
 		}
 	],
 	"sid": 952845809361367
