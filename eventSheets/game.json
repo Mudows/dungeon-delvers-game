@@ -1,0 +1,164 @@
+{
+	"name": "game",
+	"events": [
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-start-of-layout",
+					"objectClass": "System",
+					"sid": 942955373230213
+				}
+			],
+			"actions": [
+				{
+					"id": "set-position-to-another-object",
+					"objectClass": "player_light",
+					"sid": 397959155107111,
+					"parameters": {
+						"object": "player",
+						"image-point-optional": "1"
+					}
+				},
+				{
+					"id": "stop",
+					"objectClass": "Audio",
+					"sid": 519284936968541,
+					"parameters": {
+						"tag": "\"bgm\""
+					}
+				},
+				{
+					"id": "play",
+					"objectClass": "Audio",
+					"sid": 875665348460366,
+					"parameters": {
+						"audio-file": {
+							"path": "Dungeon Crawl Echo"
+						},
+						"loop": "looping",
+						"volume": "-19",
+						"stereo-pan": "0",
+						"tag-optional": "\"bgm\""
+					}
+				}
+			],
+			"sid": 643327759832405
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "every-tick",
+					"objectClass": "System",
+					"sid": 934660033215501
+				}
+			],
+			"actions": [
+				{
+					"id": "set-scale",
+					"objectClass": "player_light",
+					"sid": 869512381412052,
+					"parameters": {
+						"scale": "random(0.9,1)"
+					}
+				},
+				{
+					"id": "set-position",
+					"objectClass": "player_light",
+					"sid": 741579517712224,
+					"parameters": {
+						"x": "player.ImagePointX(1) + random(-1,1)",
+						"y": "player.ImagePointY(1) + random(-1,1)"
+					}
+				}
+			],
+			"sid": 377918492563868
+		},
+		{
+			"functionName": "playerStep",
+			"functionDescription": "",
+			"functionCategory": "",
+			"functionReturnType": "none",
+			"functionCopyPicked": false,
+			"functionIsAsync": false,
+			"functionParameters": [],
+			"eventType": "function-block",
+			"conditions": [],
+			"actions": [
+				{
+					"id": "play",
+					"objectClass": "Audio",
+					"sid": 955241671320527,
+					"parameters": {
+						"audio-file": {
+							"path": "player_step"
+						},
+						"loop": "not-looping",
+						"volume": "0",
+						"stereo-pan": "0",
+						"tag-optional": "\"\""
+					}
+				}
+			],
+			"sid": 961163371972075
+		},
+		{
+			"functionName": "atk_hit",
+			"functionDescription": "",
+			"functionCategory": "",
+			"functionReturnType": "none",
+			"functionCopyPicked": false,
+			"functionIsAsync": false,
+			"functionParameters": [],
+			"eventType": "function-block",
+			"conditions": [],
+			"actions": [
+				{
+					"id": "play",
+					"objectClass": "Audio",
+					"sid": 660471328825959,
+					"parameters": {
+						"audio-file": {
+							"path": "atk_hit"
+						},
+						"loop": "not-looping",
+						"volume": "0",
+						"stereo-pan": "0",
+						"tag-optional": "\"\""
+					}
+				}
+			],
+			"sid": 994927339783342
+		},
+		{
+			"functionName": "atk_miss",
+			"functionDescription": "",
+			"functionCategory": "",
+			"functionReturnType": "none",
+			"functionCopyPicked": false,
+			"functionIsAsync": false,
+			"functionParameters": [],
+			"eventType": "function-block",
+			"conditions": [],
+			"actions": [
+				{
+					"id": "play",
+					"objectClass": "Audio",
+					"sid": 809068940500599,
+					"parameters": {
+						"audio-file": {
+							"path": "atk_miss"
+						},
+						"loop": "not-looping",
+						"volume": "0",
+						"stereo-pan": "0",
+						"tag-optional": "\"\""
+					}
+				}
+			],
+			"sid": 159896718664528
+		}
+	],
+	"sid": 952845809361367
+}
